@@ -1,0 +1,162 @@
+model User {
+  id            String         @id
+  email         String         @unique
+  name          String?
+  role          UserRole       @default(CUSTOMER)
+
+  orders        Order[]
+  wishlistItems WishlistItem[]
+  addresses     Address[]
+}
+
+enum UserRole {
+  CUSTOMER
+  ADMIN
+}
+
+model Product {
+  id            String             @id
+  name          String
+  description   String
+  price         Decimal
+  category      String
+  categoryId    String?
+  image         String
+  isNew         Boolean
+  isActive      Boolean
+  stock         Int                @default(0)
+
+  categoryRef   Category?          @relation(fields:[categoryId], references:[id])
+
+  recipients    ProductRecipient[]
+  occasions     ProductOccasion[]
+
+  orderItems    OrderItem[]
+  wishlistItems WishlistItem[]
+}
+
+model Category {
+  id          String    @id
+  name        String    @unique
+  slug        String    @unique
+  description String?
+  image       String?
+  isActive    Boolean   @default(true)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  products    Product[]
+}
+
+model Recipient {
+  id          String             @id
+  name        String             @unique
+  slug        String             @unique
+  description String?
+  image       String?
+  isActive    Boolean            @default(true)
+  createdAt   DateTime           @default(now())
+  updatedAt   DateTime           @updatedAt
+
+  products    ProductRecipient[]
+}
+
+model Occasion {
+  id          String            @id
+  name        String            @unique
+  slug        String            @unique
+  description String?
+  image       String?
+  isActive    Boolean           @default(true)
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
+
+  products    ProductOccasion[]
+}
+
+model ProductRecipient {
+  productId   String
+  recipientId String
+
+  product     Product   @relation(fields:[productId], references:[id], onDelete: Cascade)
+  recipient   Recipient @relation(fields:[recipientId], references:[id], onDelete: Cascade)
+
+  @@id([productId, recipientId])
+}
+
+model ProductOccasion {
+  productId  String
+  occasionId String
+
+  product    Product  @relation(fields:[productId], references:[id], onDelete: Cascade)
+  occasion   Occasion @relation(fields:[occasionId], references:[id], onDelete: Cascade)
+
+  @@id([productId, occasionId])
+}
+
+model Order {
+  id            String      @id
+  userId        String?
+
+  customerName  String
+  customerEmail String
+  subtotal      Decimal
+  shipping      Decimal
+  total         Decimal
+  paymentMethod String
+  status        OrderStatus
+
+  user          User?       @relation(fields:[userId], references:[id])
+  items         OrderItem[]
+}
+
+model OrderItem {
+  id          String   @id
+  orderId     String
+  productId   String?
+
+  productName String
+  quantity    Int
+  unitPrice   Decimal
+  totalPrice  Decimal
+
+  order       Order    @relation(fields:[orderId], references:[id])
+  product     Product? @relation(fields:[productId], references:[id])
+}
+
+model WishlistItem {
+  id        String  @id
+  userId    String
+  productId String
+
+  user      User    @relation(fields:[userId], references:[id])
+  product   Product @relation(fields:[productId], references:[id])
+}
+
+model Address {
+  id           String  @id
+  userId       String
+
+  firstName    String
+  lastName     String
+  company      String?
+  addressLine1 String
+  addressLine2 String?
+  city         String
+  state        String?
+  postalCode   String
+  country      String
+  phone        String?
+  isDefault    Boolean
+
+  user         User    @relation(fields:[userId], references:[id])
+}
+
+enum OrderStatus {
+  PENDING
+  CONFIRMED
+  PROCESSING
+  SHIPPED
+  DELIVERED
+  CANCELLED
+}

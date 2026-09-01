@@ -1,0 +1,94 @@
+// use prisma-next
+// Contract inferred from the live database schema. Edit as needed, then run `prisma contract emit`.
+
+model User {
+  id            String         @id(map: "user_pkey")
+  email         String         @unique(map: "user_email_key")
+  name          String?
+  addresses     Address[]
+  orders        Order[]
+  wishlistItems WishlistItem[]
+
+  @@map("user")
+}
+
+model Address {
+  id           String  @id(map: "address_pkey")
+  addressLine1 String
+  addressLine2 String?
+  city         String
+  company      String?
+  country      String
+  firstName    String
+  isDefault    Boolean
+  lastName     String
+  phone        String?
+  postalCode   String
+  state        String?
+  userId       String
+  user         User    @relation(fields: [userId], references: [id], map: "address_userId_fkey")
+
+  @@index([userId], name: "address_userId_idx")
+  @@map("address")
+}
+
+model Order {
+  id            String      @id(map: "order_pkey")
+  customerEmail String
+  customerName  String
+  paymentMethod String
+  shipping      Numeric
+  status        String
+  subtotal      Numeric
+  total         Numeric
+  userId        String?
+  orderItems    OrderItem[]
+  user          User?       @relation(fields: [userId], references: [id], map: "order_userId_fkey")
+
+  @@index([userId], name: "order_userId_idx")
+  @@check(expression: "(status = ANY (ARRAY['PENDING'::text, 'CONFIRMED'::text, 'PROCESSING'::text, 'SHIPPED'::text, 'DELIVERED'::text, 'CANCELLED'::text]))", map: "order_status_check_90625984")
+  @@map("order")
+}
+
+model Product {
+  id            String         @id(map: "product_pkey")
+  category      String
+  description   String
+  image         String
+  isActive      Boolean
+  isNew         Boolean
+  name          String
+  price         Numeric
+  orderItems    OrderItem[]
+  wishlistItems WishlistItem[]
+
+  @@map("product")
+}
+
+model OrderItem {
+  id          String   @id(map: "orderItem_pkey")
+  orderId     String
+  productId   String?
+  productName String
+  quantity    Int
+  totalPrice  Numeric
+  unitPrice   Numeric
+  order       Order    @relation(fields: [orderId], references: [id], map: "orderItem_orderId_fkey")
+  product     Product? @relation(fields: [productId], references: [id], map: "orderItem_productId_fkey")
+
+  @@index([orderId], name: "orderItem_orderId_idx")
+  @@index([productId], name: "orderItem_productId_idx")
+  @@map("orderItem")
+}
+
+model WishlistItem {
+  id        String  @id(map: "wishlistItem_pkey")
+  productId String
+  userId    String
+  product   Product @relation(fields: [productId], references: [id], map: "wishlistItem_productId_fkey")
+  user      User    @relation(fields: [userId], references: [id], map: "wishlistItem_userId_fkey")
+
+  @@index([productId], name: "wishlistItem_productId_idx")
+  @@index([userId], name: "wishlistItem_userId_idx")
+  @@map("wishlistItem")
+}

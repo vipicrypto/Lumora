@@ -1,6 +1,13 @@
+"use client";
+import { useState } from "react";
 import Link from "next/link";
+import { useCart } from "../context/CartContext";
+import { useWishlist } from "../context/WishlistContext";
 
 export const Header: React.FC = () => {
+  const { cartItemCount } = useCart();
+  const { wishlistCount } = useWishlist();
+  const [searchQuery, setSearchQuery] = useState("");
   const navLinks = [
     { name: "Gifts", href: "/gifts" },
     { name: "For Her", href: "/for-her" },
@@ -24,30 +31,74 @@ export const Header: React.FC = () => {
             <span className="text-xl md:text-2xl font-serif font-semibold tracking-tight text-[#2d2a26]">Lumora</span>
           </Link>
 
-          <div className="hidden md:flex flex-1 max-w-xl mx-6 lg:mx-10">
-            <div className="relative w-full">
-              <svg className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-stone-400" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
-              <input
-                type="text"
-                placeholder="Search gifts, categories, occasions..."
-                className="w-full pl-10 pr-4 py-2.5 bg-stone-50 border border-stone-200 rounded-full text-sm text-[#1a1a1a] placeholder:text-stone-400 focus:outline-none focus:ring-2 focus:ring-[#2d2a26]/10 focus:border-[#2d2a26]/30 transition-all"
-              />
-            </div>
-          </div>
+<div className="hidden md:flex flex-1 max-w-xl mx-6 lg:mx-10">
+  <form
+    onSubmit={(e) => {
+      e.preventDefault();
 
+      const query = searchQuery.trim();
+
+      if (query) {
+        window.location.href = `/search?q=${encodeURIComponent(query)}`;
+      }
+    }}
+    className="relative w-full"
+  >
+    <svg
+      className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-stone-400"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      viewBox="0 0 24 24"
+    >
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+      />
+    </svg>
+
+    <input
+      type="text"
+      value={searchQuery}
+      onChange={(e) => setSearchQuery(e.target.value)}
+      placeholder="Search gifts, categories, occasions..."
+      className="w-full pl-10 pr-4 py-2.5 bg-stone-50 border border-stone-200 rounded-full text-sm text-[#1a1a1a] placeholder:text-stone-400 focus:outline-none focus:ring-2 focus:ring-[#2d2a26]/10 focus:border-[#2d2a26]/30 transition-all"
+    />
+  </form>
+</div>
           <nav className="flex items-center gap-1 md:gap-3">
             <Link href="/account" className="hidden sm:flex items-center gap-1.5 px-3 py-2 text-sm font-medium text-[#2d2a26] hover:text-[#8b6f5a] transition-colors">
               <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>
               <span>Account</span>
             </Link>
-            <Link href="/wishlist" className="hidden sm:flex items-center gap-1.5 px-3 py-2 text-sm font-medium text-[#2d2a26] hover:text-[#8b6f5a] transition-colors">
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M4.318 6.318a4.5 4.5 0 016.364 0L12 7.636l1.318-1.318a4.5 4.5 0 116.364 6.364L12 21.364l-7.682-7.682a4.5 4.5 0 010-6.364z" /></svg>
-              <span>Wishlist</span>
-            </Link>
-            <Link href="/cart" className="flex items-center gap-1.5 px-3 py-2 text-sm font-medium text-[#2d2a26] hover:text-[#8b6f5a] transition-colors">
+<Link
+  href="/wishlist"
+  className="hidden sm:flex items-center gap-1.5 px-3 py-2 text-sm font-medium text-[#2d2a26] hover:text-[#8b6f5a] transition-colors"
+>
+  <svg
+    className="w-4 h-4"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2"
+    viewBox="0 0 24 24"
+  >
+    <path
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      d="M4.318 6.318a4.5 4.5 0 016.364 0L12 7.636l1.318-1.318a4.5 4.5 0 116.364 6.364L12 21.364l-7.682-7.682a4.5 4.5 0 010-6.364z"
+    />
+  </svg>
+
+  <span>Wishlist</span>
+
+  <span className="bg-[#8b6f5a] text-white text-[10px] font-bold w-4 h-4 rounded-full flex items-center justify-center">
+    {wishlistCount}
+  </span>
+</Link>            <Link href="/cart" className="flex items-center gap-1.5 px-3 py-2 text-sm font-medium text-[#2d2a26] hover:text-[#8b6f5a] transition-colors">
               <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" /></svg>
               <span className="hidden sm:inline">Cart</span>
-              <span className="bg-[#2d2a26] text-white text-[10px] font-bold w-4 h-4 rounded-full flex items-center justify-center">0</span>
+              <span className="bg-[#2d2a26] text-white text-[10px] font-bold w-4 h-4 rounded-full flex items-center justify-center">{cartItemCount}</span>
             </Link>
           </nav>
         </div>

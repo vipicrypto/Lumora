@@ -1,0 +1,90 @@
+model User {
+  id            String         @id
+  email         String         @unique
+  name          String?
+
+  orders        Order[]
+  wishlistItems WishlistItem[]
+  addresses     Address[]
+}
+
+model Product {
+  id            String         @id
+  name          String
+  description   String
+  price         Decimal
+  category      String
+  image         String
+  isNew         Boolean
+  isActive      Boolean
+
+  orderItems    OrderItem[]
+  wishlistItems WishlistItem[]
+}
+
+model Order {
+  id            String      @id
+  userId        String?
+
+  customerName  String
+  customerEmail String
+  subtotal      Decimal
+  shipping      Decimal
+  total         Decimal
+  paymentMethod String
+  status        OrderStatus
+
+  user          User?       @relation(fields: [userId], references: [id])
+  items         OrderItem[]
+}
+
+model OrderItem {
+  id          String   @id
+  orderId     String
+  productId   String?
+
+  productName String
+  quantity    Int
+  unitPrice   Decimal
+  totalPrice  Decimal
+
+  order       Order    @relation(fields: [orderId], references: [id])
+  product     Product? @relation(fields: [productId], references: [id])
+}
+
+model WishlistItem {
+  id        String   @id
+  userId    String
+  productId String
+
+  user      User     @relation(fields: [userId], references: [id])
+  product   Product  @relation(fields: [productId], references: [id])
+}
+
+model Address {
+  id           String  @id
+  userId       String
+
+  firstName    String
+  lastName     String
+  company      String?
+  addressLine1 String
+  addressLine2 String?
+  city         String
+  state        String?
+  postalCode   String
+  country      String
+  phone        String?
+  isDefault    Boolean
+
+  user         User    @relation(fields: [userId], references: [id])
+}
+
+enum OrderStatus {
+  PENDING
+  CONFIRMED
+  PROCESSING
+  SHIPPED
+  DELIVERED
+  CANCELLED
+}
