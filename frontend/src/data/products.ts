@@ -54,7 +54,8 @@ const beautyGallery = [
 ];
 
 const defaultShipping =
-  "Free standard shipping on orders over $50. Standard delivery arrives in 5–7 business days. Express shipping (2–3 business days) is available at checkout.";
+  "Free standard shipping on orders over ₹4,500. Standard delivery arrives in 5–7 business days. Express shipping (2–3 business days) is available at checkout.";
+
 const defaultReturns =
   "Not in love? Return any item within 30 days for a full refund. Items must be unused and in their original packaging. We cover the return label.";
 
@@ -62,8 +63,8 @@ export const products: Product[] = [
   {
     id: "1",
     name: "Elegant Silk Scarf",
-    price: 49.99,
-    originalPrice: 65.0,
+    price: 4499,
+    originalPrice: 5850,
     image:
       "https://images.unsplash.com/photo-1584917865442-de89df76afd3?auto=format&fit=crop&w=900&q=80",
     category: "Accessories",
@@ -86,7 +87,7 @@ export const products: Product[] = [
   {
     id: "2",
     name: "Minimalist Leather Wallet",
-    price: 79.0,
+    price: 7110,
     image:
       "https://images.unsplash.com/photo-1627123424574-724758594e93?auto=format&fit=crop&w=900&q=80",
     category: "Accessories",
@@ -108,8 +109,8 @@ export const products: Product[] = [
   {
     id: "3",
     name: "Modern Table Lamp",
-    price: 120.5,
-    originalPrice: 145.0,
+    price: 10845,
+    originalPrice: 13050,
     image:
       "https://images.unsplash.com/photo-1507473885765-e6ed057f782c?auto=format&fit=crop&w=900&q=80",
     category: "Home",
@@ -132,7 +133,7 @@ export const products: Product[] = [
   {
     id: "4",
     name: "Organic Cotton T-Shirt",
-    price: 35.0,
+    price: 3150,
     image:
       "https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?auto=format&fit=crop&w=900&q=80",
     category: "Apparel",
@@ -156,7 +157,7 @@ export const products: Product[] = [
   {
     id: "5",
     name: "Stainless Steel Water Bottle",
-    price: 25.99,
+    price: 2339,
     image:
       "https://images.unsplash.com/photo-1602143407151-7111542de6e8?auto=format&fit=crop&w=900&q=80",
     category: "Lifestyle",
@@ -181,7 +182,7 @@ export const products: Product[] = [
   {
     id: "6",
     name: "Handcrafted Wooden Photo Frame",
-    price: 45.0,
+    price: 4050,
     image:
       "https://images.unsplash.com/photo-1519681393784-d120267933ba?auto=format&fit=crop&w=900&q=80",
     category: "Home",
@@ -203,8 +204,8 @@ export const products: Product[] = [
   {
     id: "7",
     name: "Personalized Engraved Necklace",
-    price: 60.0,
-    originalPrice: 75.0,
+    price: 5400,
+    originalPrice: 6750,
     image:
       "https://images.unsplash.com/photo-1599643478518-a784e5dc4c8f?auto=format&fit=crop&w=900&q=80",
     category: "Jewelry",
@@ -221,14 +222,14 @@ export const products: Product[] = [
     materials:
       "14k gold-fill, sterling silver or rose gold plating over a brass core. Hypoallergenic. Comes in a velvet pouch and gift box.",
     shipping:
-      "Personalized pieces ship within 3 business days. Free shipping on personalized orders over $50.",
+      "Personalized pieces ship within 3 business days. Free shipping on personalized orders over ₹4,500.",
     returns:
       "Personalized pieces are final sale. However, if there is a defect in craftsmanship, we will repair or replace the item free of charge.",
   },
   {
     id: "8",
     name: "Luxury Scented Candle Set",
-    price: 30.0,
+    price: 2700,
     image:
       "https://images.unsplash.com/photo-1603006905003-be475563bc59?auto=format&fit=crop&w=900&q=80",
     category: "Beauty",
@@ -262,10 +263,15 @@ export const getRelatedProducts = (
   const sameCategory = products.filter(
     (p) => p.category === category && p.id !== id
   );
-  if (sameCategory.length >= limit) return sameCategory.slice(0, limit);
+
+  if (sameCategory.length >= limit) {
+    return sameCategory.slice(0, limit);
+  }
+
   // backfill with other categories if there aren't enough
   const others = products.filter(
     (p) => p.category !== category && p.id !== id
   );
+
   return [...sameCategory, ...others].slice(0, limit);
 };

@@ -1,0 +1,128 @@
+[
+  {
+    "id": "column.public.product.materials",
+    "label": "Add column \"materials\" to \"product\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "column",
+        "name": "materials",
+        "table": "product"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure column \"materials\" is missing",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "public",
+          "product",
+          "materials"
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add column \"materials\"",
+        "sql": "ALTER TABLE \"public\".\"product\" ADD COLUMN \"materials\" text"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify column \"materials\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "public",
+          "product",
+          "materials"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "column.public.product.shipping",
+    "label": "Add column \"shipping\" to \"product\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "column",
+        "name": "shipping",
+        "table": "product"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure column \"shipping\" is missing",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "public",
+          "product",
+          "shipping"
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add column \"shipping\"",
+        "sql": "ALTER TABLE \"public\".\"product\" ADD COLUMN \"shipping\" text"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify column \"shipping\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "public",
+          "product",
+          "shipping"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "column.public.product.returns",
+    "label": "Add column \"returns\" to \"product\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "column",
+        "name": "returns",
+        "table": "product"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure column \"returns\" is missing",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "public",
+          "product",
+          "returns"
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add column \"returns\"",
+        "sql": "ALTER TABLE \"public\".\"product\" ADD COLUMN \"returns\" text"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify column \"returns\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "public",
+          "product",
+          "returns"
+        ]
+      }
+    ]
+  }
+]

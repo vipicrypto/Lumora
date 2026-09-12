@@ -9,7 +9,8 @@ import React, {
 } from "react";
 import { Product } from "../data/products";
 
-const CART_STORAGE_KEY = "cartItems";
+const GUEST_CART_STORAGE_KEY = "lumora_guest_cart";
+const USER_ID_STORAGE_KEY = "lumora_current_user_id";
 
 const MAX_QUANTITY_PER_ITEM = 99;
 
@@ -129,68 +130,252 @@ function sanitizeCartItems(value: unknown): CartItem[] {
     }));
 }
 
+function getCartStorageKey(userId: string | null) {
+  if (!userId) {
+    return GUEST_CART_STORAGE_KEY;
+  }
+
+  return `lumora_cart_${userId}`;
+}
+
+function readCart(userId: string | null): CartItem[] {
+  try {
+    const storageKey = getCartStorageKey(userId);
+    const stored = localStorage.getItem(storageKey);
+
+    if (!stored) {
+      return [];
+    }
+
+    return sanitizeCartItems(JSON.parse(stored));
+  } catch {
+    return [];
+  }
+}
+
+function saveCart(
+  userId: string | null,
+  items: CartItem[]
+) {
+  try {
+    const storageKey = getCartStorageKey(userId);
+
+    localStorage.setItem(
+      storageKey,
+      JSON.stringify(items)
+    );
+  } catch {
+    /*
+     * localStorage can fail in private/restricted browser
+     * environments. Cart functionality should still continue.
+     */
+  }
+}
+
 export function CartProvider({
   children,
 }: {
   children: React.ReactNode;
 }) {
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
+  const [currentUserId, setCurrentUserId] = useState<string | null>(
+    null
+  );
   const [isHydrated, setIsHydrated] = useState(false);
 
   /*
-   * Restore the cart after hydration.
+   * Get the currently authenticated user.
    *
-   * We intentionally wait until the first client render so the
-   * server-rendered HTML and client-rendered HTML remain consistent.
+   * The authentication cookie is managed by the server, so
+   * the browser cannot reliably read lumora_user_id directly.
+   *
+   * /api/auth/me is used to determine whether a user is logged in.
    */
-  useEffect(() => {
+  const getCurrentUserId = async (): Promise<string | null> => {
     try {
-      const stored = localStorage.getItem(CART_STORAGE_KEY);
+      const response = await fetch("/api/auth/me", {
+        method: "GET",
+        cache: "no-store",
+      });
 
-      if (!stored) {
-        setIsHydrated(true);
-        return;
+      if (!response.ok) {
+        return null;
       }
 
-      const parsed: unknown = JSON.parse(stored);
-      const safeCart = sanitizeCartItems(parsed);
+      const data = await response.json();
 
-      setCartItems(safeCart);
-    } catch {
       /*
-       * If localStorage contains invalid/corrupted data,
-       * start with an empty cart instead of breaking the app.
+       * Support the common response shapes used by the
+       * existing authentication endpoint.
        */
-      setCartItems([]);
-    } finally {
-      setIsHydrated(true);
+      const userId =
+        data?.user?.id ??
+        data?.userId ??
+        data?.id ??
+        null;
+
+      if (
+        typeof userId === "string" &&
+        userId.trim()
+      ) {
+        return userId.trim();
+      }
+
+      return null;
+    } catch {
+      return null;
     }
+  };
+
+  /*
+   * Initial hydration.
+   *
+   * We first check the authenticated user. Then we load only
+   * that user's cart.
+   *
+   * Guest users use lumora_guest_cart.
+   */
+  useEffect(() => {
+    let cancelled = false;
+
+    const initializeCart = async () => {
+      try {
+        const userId = await getCurrentUserId();
+
+        if (cancelled) {
+          return;
+        }
+
+        setCurrentUserId(userId);
+
+        /*
+         * Keep the current user id in a non-sensitive localStorage
+         * value only for client-side cart bookkeeping.
+         *
+         * The real authentication remains controlled by the
+         * server-side cookie.
+         */
+        try {
+          if (userId) {
+            localStorage.setItem(
+              USER_ID_STORAGE_KEY,
+              userId
+            );
+          } else {
+            localStorage.removeItem(
+              USER_ID_STORAGE_KEY
+            );
+          }
+        } catch {
+          // Ignore localStorage errors.
+        }
+
+        const savedCart = readCart(userId);
+
+        setCartItems(savedCart);
+      } finally {
+        if (!cancelled) {
+          setIsHydrated(true);
+        }
+      }
+    };
+
+    initializeCart();
+
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   /*
-   * Persist cart changes only after the original cart has
-   * finished loading.
+   * Listen for authentication changes.
    *
-   * This prevents the initial [] state from overwriting an
-   * existing customer's saved cart.
+   * Login/register/logout pages can dispatch:
+   *
+   * window.dispatchEvent(new Event("lumora-auth-changed"))
+   *
+   * The provider will then switch to the correct cart.
    */
   useEffect(() => {
     if (!isHydrated) {
       return;
     }
 
-    try {
-      localStorage.setItem(
-        CART_STORAGE_KEY,
-        JSON.stringify(cartItems)
-      );
-    } catch {
+    let cancelled = false;
+
+    const handleAuthChange = async () => {
+      const userId = await getCurrentUserId();
+
+      if (cancelled) {
+        return;
+      }
+
+      setCurrentUserId((previousUserId) => {
+        /*
+         * Nothing changed.
+         */
+        if (previousUserId === userId) {
+          return previousUserId;
+        }
+
+        return userId;
+      });
+
       /*
-       * localStorage can fail in private/restricted browser
-       * environments. Cart functionality should still continue.
+       * IMPORTANT:
+       *
+       * When the authenticated user changes, load the new
+       * user's cart instead of keeping the previous user's cart.
        */
+      setCartItems(readCart(userId));
+
+      try {
+        if (userId) {
+          localStorage.setItem(
+            USER_ID_STORAGE_KEY,
+            userId
+          );
+        } else {
+          localStorage.removeItem(
+            USER_ID_STORAGE_KEY
+          );
+        }
+      } catch {
+        // Ignore localStorage errors.
+      }
+    };
+
+    window.addEventListener(
+      "lumora-auth-changed",
+      handleAuthChange
+    );
+
+    return () => {
+      cancelled = true;
+
+      window.removeEventListener(
+        "lumora-auth-changed",
+        handleAuthChange
+      );
+    };
+  }, [isHydrated]);
+
+  /*
+   * Persist cart changes only after hydration.
+   *
+   * Each authenticated user gets their own localStorage key.
+   */
+  useEffect(() => {
+    if (!isHydrated) {
+      return;
     }
-  }, [cartItems, isHydrated]);
+
+    saveCart(currentUserId, cartItems);
+  }, [
+    cartItems,
+    currentUserId,
+    isHydrated,
+  ]);
 
   const addToCart = (
     product: Product,
@@ -273,6 +458,11 @@ export function CartProvider({
 
   const clearCart = () => {
     setCartItems([]);
+
+    /*
+     * Immediately clear the currently active storage key too.
+     */
+    saveCart(currentUserId, []);
   };
 
   const cartItemCount = useMemo(() => {

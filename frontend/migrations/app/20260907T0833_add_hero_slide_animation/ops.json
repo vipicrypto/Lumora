@@ -1,0 +1,86 @@
+[
+  {
+    "id": "column.public.heroSlide.animation",
+    "label": "Add column \"animation\" to \"heroSlide\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "column",
+        "name": "animation",
+        "table": "heroSlide"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure column \"animation\" is missing",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "public",
+          "heroSlide",
+          "animation"
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add column \"animation\"",
+        "sql": "ALTER TABLE \"public\".\"heroSlide\" ADD COLUMN \"animation\" text DEFAULT 'fade' NOT NULL"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify column \"animation\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "public",
+          "heroSlide",
+          "animation"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "column.public.heroSlide.animationDuration",
+    "label": "Add column \"animationDuration\" to \"heroSlide\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "column",
+        "name": "animationDuration",
+        "table": "heroSlide"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure column \"animationDuration\" is missing",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "public",
+          "heroSlide",
+          "animationDuration"
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add column \"animationDuration\"",
+        "sql": "ALTER TABLE \"public\".\"heroSlide\" ADD COLUMN \"animationDuration\" int4 DEFAULT 600 NOT NULL"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify column \"animationDuration\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "public",
+          "heroSlide",
+          "animationDuration"
+        ]
+      }
+    ]
+  }
+]

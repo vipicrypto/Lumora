@@ -14,3 +14,4 @@ export const CategoryCard: React.FC<{ name: string; image: string }> = ({ name, 
     </Card>
   );
 };
+

@@ -55,3 +55,4 @@ export const Button: React.FC<ButtonProps> = ({
   // Default to button element.
   return <button {...sharedProps}>{children}</button>;
 };
+

@@ -1,37 +1,33 @@
 "use client";
 
-import Link from "next/link";
 import { FormEvent, useState } from "react";
 import { useRouter } from "next/navigation";
 
 export default function RegisterPage() {
   const router = useRouter();
 
-  const [showPassword, setShowPassword] = useState(false);
-  const [showConfirmPassword, setShowConfirmPassword] =
-    useState(false);
-
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [confirmPassword, setConfirmPassword] =
-    useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
 
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [success, setSuccess] = useState("");
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
     setError("");
+    setSuccess("");
 
-    if (!name.trim()) {
-      setError("Please enter your full name.");
+    if (!name.trim() || !email.trim() || !password) {
+      setError("Please fill in all fields.");
       return;
     }
 
-    if (!email.trim()) {
-      setError("Please enter your email address.");
+    if (name.trim().length < 2) {
+      setError("Please enter your full name.");
       return;
     }
 
@@ -45,17 +41,17 @@ export default function RegisterPage() {
       return;
     }
 
-    setIsSubmitting(true);
-
     try {
+      setLoading(true);
+
       const response = await fetch("/api/register", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          name,
-          email,
+          name: name.trim(),
+          email: email.trim().toLowerCase(),
           password,
         }),
       });
@@ -63,324 +59,169 @@ export default function RegisterPage() {
       const data = await response.json();
 
       if (!response.ok) {
-        setError(
-          typeof data.error === "string"
-            ? data.error
-            : "Unable to create your account.",
+        throw new Error(
+          data.error || "Unable to create account."
         );
-        return;
       }
 
-      router.push("/login");
-    } catch {
+      setSuccess(
+        "Account created successfully. Redirecting to login..."
+      );
+
+      window.dispatchEvent(
+        new Event("lumora-auth-changed")
+      );
+
+      setTimeout(() => {
+        router.push("/login");
+      }, 1000);
+    } catch (err) {
       setError(
-        "Something went wrong. Please try again.",
+        err instanceof Error
+          ? err.message
+          : "Unable to create account. Please try again."
       );
     } finally {
-      setIsSubmitting(false);
+      setLoading(false);
     }
   }
 
   return (
-    <main className="min-h-[75vh] bg-[#faf9f7] flex items-center justify-center px-4 py-12 md:py-16">
-      <div className="w-full max-w-md">
-        {/* Brand */}
-        <div className="text-center mb-8">
-          <Link
-            href="/"
-            className="inline-flex items-center gap-2.5"
-          >
-            <div className="w-10 h-10 rounded-full bg-[#2d2a26] flex items-center justify-center">
-              <span className="text-white font-serif text-xl font-bold leading-none">
-                L
-              </span>
-            </div>
+    <main className="min-h-screen bg-white px-6 py-16">
+      <div className="mx-auto w-full max-w-md">
+        <div className="mb-10 text-center">
+          <h1 className="text-4xl font-semibold tracking-tight text-black">
+            Create your account
+          </h1>
 
-            <span className="text-2xl font-serif font-semibold tracking-tight text-[#2d2a26]">
-              Lumora
-            </span>
-          </Link>
+          <p className="mt-3 text-sm text-neutral-500">
+            Join Lumora and start shopping.
+          </p>
         </div>
 
-        {/* Card */}
-        <div className="bg-white rounded-3xl border border-stone-100 shadow-sm p-6 sm:p-8 md:p-10">
-          <div className="text-center mb-8">
-            <p className="text-[10px] font-semibold tracking-[0.14em] uppercase text-[#8b6f5a] mb-2">
-              Welcome to Lumora
-            </p>
+        <form
+          onSubmit={handleSubmit}
+          className="space-y-5"
+        >
+          <div>
+            <label
+              htmlFor="name"
+              className="mb-2 block text-sm font-medium text-neutral-800"
+            >
+              Full name
+            </label>
 
-            <h1 className="text-3xl md:text-4xl font-serif font-semibold text-[#2d2a26]">
-              Create an Account
-            </h1>
-
-            <p className="mt-2 text-sm text-stone-500">
-              Join Lumora and manage your orders,
-              wishlist, and account.
-            </p>
+            <input
+              id="name"
+              type="text"
+              value={name}
+              onChange={(event) =>
+                setName(event.target.value)
+              }
+              placeholder="Enter your full name"
+              autoComplete="name"
+              disabled={loading}
+              className="w-full rounded-xl border border-neutral-200 px-4 py-3 text-sm outline-none transition focus:border-black"
+            />
           </div>
 
-          {/* Error */}
-          {error && (
-            <div
-              role="alert"
-              className="mb-5 rounded-xl border border-red-100 bg-red-50 px-4 py-3 text-sm text-red-700"
+          <div>
+            <label
+              htmlFor="email"
+              className="mb-2 block text-sm font-medium text-neutral-800"
             >
+              Email
+            </label>
+
+            <input
+              id="email"
+              type="email"
+              value={email}
+              onChange={(event) =>
+                setEmail(event.target.value)
+              }
+              placeholder="you@example.com"
+              autoComplete="email"
+              disabled={loading}
+              className="w-full rounded-xl border border-neutral-200 px-4 py-3 text-sm outline-none transition focus:border-black"
+            />
+          </div>
+
+          <div>
+            <label
+              htmlFor="password"
+              className="mb-2 block text-sm font-medium text-neutral-800"
+            >
+              Password
+            </label>
+
+            <input
+              id="password"
+              type="password"
+              value={password}
+              onChange={(event) =>
+                setPassword(event.target.value)
+              }
+              placeholder="At least 8 characters"
+              autoComplete="new-password"
+              disabled={loading}
+              className="w-full rounded-xl border border-neutral-200 px-4 py-3 text-sm outline-none transition focus:border-black"
+            />
+          </div>
+
+          <div>
+            <label
+              htmlFor="confirmPassword"
+              className="mb-2 block text-sm font-medium text-neutral-800"
+            >
+              Confirm password
+            </label>
+
+            <input
+              id="confirmPassword"
+              type="password"
+              value={confirmPassword}
+              onChange={(event) =>
+                setConfirmPassword(event.target.value)
+              }
+              placeholder="Re-enter your password"
+              autoComplete="new-password"
+              disabled={loading}
+              className="w-full rounded-xl border border-neutral-200 px-4 py-3 text-sm outline-none transition focus:border-black"
+            />
+          </div>
+
+          {error && (
+            <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-600">
               {error}
             </div>
           )}
 
-          {/* Register Form */}
-          <form
-            onSubmit={handleSubmit}
-            className="space-y-5"
+          {success && (
+            <div className="rounded-xl border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-700">
+              {success}
+            </div>
+          )}
+
+          <button
+            type="submit"
+            disabled={loading}
+            className="w-full rounded-xl bg-black px-4 py-3.5 text-sm font-medium text-white transition hover:bg-neutral-800 disabled:cursor-not-allowed disabled:opacity-60"
           >
-            {/* Name */}
-            <div>
-              <label
-                htmlFor="name"
-                className="block text-xs font-semibold tracking-wide text-[#2d2a26] mb-2"
-              >
-                Full Name
-              </label>
+            {loading ? "Creating account..." : "Create account"}
+          </button>
+        </form>
 
-              <input
-                id="name"
-                name="name"
-                type="text"
-                autoComplete="name"
-                value={name}
-                onChange={(event) =>
-                  setName(event.target.value)
-                }
-                placeholder="Your full name"
-                disabled={isSubmitting}
-                className="w-full px-4 py-3.5 bg-stone-50 border border-stone-200 rounded-xl text-sm text-[#2d2a26] placeholder:text-stone-400 focus:outline-none focus:ring-2 focus:ring-[#8b6f5a]/20 focus:border-[#8b6f5a] transition-all disabled:opacity-60"
-              />
-            </div>
-
-            {/* Email */}
-            <div>
-              <label
-                htmlFor="email"
-                className="block text-xs font-semibold tracking-wide text-[#2d2a26] mb-2"
-              >
-                Email Address
-              </label>
-
-              <input
-                id="email"
-                name="email"
-                type="email"
-                autoComplete="email"
-                value={email}
-                onChange={(event) =>
-                  setEmail(event.target.value)
-                }
-                placeholder="you@example.com"
-                disabled={isSubmitting}
-                className="w-full px-4 py-3.5 bg-stone-50 border border-stone-200 rounded-xl text-sm text-[#2d2a26] placeholder:text-stone-400 focus:outline-none focus:ring-2 focus:ring-[#8b6f5a]/20 focus:border-[#8b6f5a] transition-all disabled:opacity-60"
-              />
-            </div>
-
-            {/* Password */}
-            <div>
-              <label
-                htmlFor="password"
-                className="block text-xs font-semibold tracking-wide text-[#2d2a26] mb-2"
-              >
-                Password
-              </label>
-
-              <div className="relative">
-                <input
-                  id="password"
-                  name="password"
-                  type={
-                    showPassword ? "text" : "password"
-                  }
-                  autoComplete="new-password"
-                  value={password}
-                  onChange={(event) =>
-                    setPassword(event.target.value)
-                  }
-                  placeholder="At least 8 characters"
-                  disabled={isSubmitting}
-                  className="w-full px-4 py-3.5 pr-12 bg-stone-50 border border-stone-200 rounded-xl text-sm text-[#2d2a26] placeholder:text-stone-400 focus:outline-none focus:ring-2 focus:ring-[#8b6f5a]/20 focus:border-[#8b6f5a] transition-all disabled:opacity-60"
-                />
-
-                <button
-                  type="button"
-                  onClick={() =>
-                    setShowPassword(
-                      (current) => !current,
-                    )
-                  }
-                  disabled={isSubmitting}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 w-8 h-8 flex items-center justify-center text-stone-400 hover:text-[#2d2a26] transition-colors"
-                  aria-label={
-                    showPassword
-                      ? "Hide password"
-                      : "Show password"
-                  }
-                >
-                  {showPassword ? (
-                    <svg
-                      className="w-5 h-5"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="1.7"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        d="M3 3l18 18M10.584 10.587a2 2 0 002.829 2.828M9.88 4.24A9.77 9.77 0 0112 4c5 0 9 3.5 10 8a9.73 9.73 0 01-2.1 4.26M6.61 6.61C4.93 7.843.7 9.63 3 12c1 4.5 5 8 9 8a9.77 9.77 0 004.24-.96"
-                      />
-                    </svg>
-                  ) : (
-                    <svg
-                      className="w-5 h-5"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="1.7"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
-                      />
-                      <circle
-                        cx="12"
-                        cy="12"
-                        r="3"
-                      />
-                    </svg>
-                  )}
-                </button>
-              </div>
-            </div>
-
-            {/* Confirm Password */}
-            <div>
-              <label
-                htmlFor="confirmPassword"
-                className="block text-xs font-semibold tracking-wide text-[#2d2a26] mb-2"
-              >
-                Confirm Password
-              </label>
-
-              <div className="relative">
-                <input
-                  id="confirmPassword"
-                  name="confirmPassword"
-                  type={
-                    showConfirmPassword
-                      ? "text"
-                      : "password"
-                  }
-                  autoComplete="new-password"
-                  value={confirmPassword}
-                  onChange={(event) =>
-                    setConfirmPassword(
-                      event.target.value,
-                    )
-                  }
-                  placeholder="Re-enter your password"
-                  disabled={isSubmitting}
-                  className="w-full px-4 py-3.5 pr-12 bg-stone-50 border border-stone-200 rounded-xl text-sm text-[#2d2a26] placeholder:text-stone-400 focus:outline-none focus:ring-2 focus:ring-[#8b6f5a]/20 focus:border-[#8b6f5a] transition-all disabled:opacity-60"
-                />
-
-                <button
-                  type="button"
-                  onClick={() =>
-                    setShowConfirmPassword(
-                      (current) => !current,
-                    )
-                  }
-                  disabled={isSubmitting}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 w-8 h-8 flex items-center justify-center text-stone-400 hover:text-[#2d2a26] transition-colors"
-                  aria-label={
-                    showConfirmPassword
-                      ? "Hide password"
-                      : "Show password"
-                  }
-                >
-                  {showConfirmPassword ? (
-                    <svg
-                      className="w-5 h-5"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="1.7"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        d="M3 3l18 18M10.584 10.587a2 2 0 002.829 2.828M9.88 4.24A9.77 9.77 0 0112 4c5 0 9 3.5 10 8a9.73 9.73 0 01-2.1 4.26M6.61 6.61C4.93 7.843.7 9.63 3 12c1 4.5 5 8 9 8a9.77 9.77 0 004.24-.96"
-                      />
-                    </svg>
-                  ) : (
-                    <svg
-                      className="w-5 h-5"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="1.7"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
-                      />
-                      <circle
-                        cx="12"
-                        cy="12"
-                        r="3"
-                      />
-                    </svg>
-                  )}
-                </button>
-              </div>
-            </div>
-
-            {/* Submit */}
-            <button
-              type="submit"
-              disabled={isSubmitting}
-              className="w-full bg-[#2d2a26] text-white px-6 py-3.5 rounded-full text-sm font-semibold hover:bg-[#1a1a1a] transition-all shadow-sm hover:shadow-md disabled:opacity-60 disabled:cursor-not-allowed"
-            >
-              {isSubmitting
-                ? "Creating Account..."
-                : "Create Account"}
-            </button>
-          </form>
-
-          {/* Divider */}
-          <div className="flex items-center gap-4 my-7">
-            <div className="h-px flex-1 bg-stone-100" />
-
-            <span className="text-[10px] uppercase tracking-wider text-stone-400">
-              Already a member?
-            </span>
-
-            <div className="h-px flex-1 bg-stone-100" />
-          </div>
-
-          {/* Login */}
-          <Link
-            href="/login"
-            className="w-full inline-flex items-center justify-center border border-stone-200 bg-white text-[#2d2a26] px-6 py-3.5 rounded-full text-sm font-semibold hover:bg-stone-50 hover:border-stone-300 transition-all"
+        <div className="mt-8 text-center text-sm text-neutral-500">
+          Already have an account?{" "}
+          <button
+            type="button"
+            onClick={() => router.push("/login")}
+            className="font-medium text-black underline underline-offset-4"
           >
-            Sign In
-          </Link>
+            Sign in
+          </button>
         </div>
-
-        {/* Footer Note */}
-        <p className="text-center text-xs text-stone-400 mt-6">
-          By creating an account, you agree to
-          Lumora&apos;s terms and privacy policy.
-        </p>
       </div>
     </main>
   );

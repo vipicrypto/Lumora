@@ -1,9 +1,51 @@
+"use client";
+
 import Link from "next/link";
-import { products } from "@/data/products";
+import { useEffect, useState } from "react";
 import { ProductCard } from "@/components/ProductCard";
+import { Product } from "@/data/products";
+import { adaptDatabaseProductList } from "@/lib/products";
 
 export const BestSellers: React.FC = () => {
-  const top = [...products].sort((a, b) => b.rating - a.rating).slice(0, 4);
+  const [products, setProducts] = useState<Product[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function load() {
+      try {
+        const response = await fetch(
+          "/api/products?section=best&limit=4",
+          { cache: "no-store" }
+        );
+        const data = await response.json().catch(() => ({}));
+
+        if (cancelled) return;
+
+        if (response.ok && Array.isArray(data.products)) {
+          setProducts(adaptDatabaseProductList(data.products));
+        } else {
+          setProducts([]);
+        }
+      } catch {
+        if (!cancelled) setProducts([]);
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    }
+
+    load();
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  if (!loading && products.length === 0) {
+    return null;
+  }
+
   return (
     <section id="best-sellers">
       <div className="flex items-end justify-between mb-7">
@@ -17,7 +59,7 @@ export const BestSellers: React.FC = () => {
         </Link>
       </div>
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-5">
-        {top.map((p) => (
+        {products.map((p) => (
           <ProductCard key={p.id} product={p} />
         ))}
       </div>

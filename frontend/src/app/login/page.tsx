@@ -5,6 +5,8 @@ import { useState } from "react";
 
 export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false);
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
 
   return (
     <main className="min-h-[75vh] bg-[#faf9f7] flex items-center justify-center px-4 py-12 md:py-16">
@@ -45,11 +47,85 @@ export default function LoginPage() {
 
           {/* Login Form */}
           <form
-            onSubmit={(e) => {
+            onSubmit={async (e) => {
               e.preventDefault();
+
+              setError("");
+              setLoading(true);
+
+              const formData = new FormData(e.currentTarget);
+
+              const email = String(
+                formData.get("email") || ""
+              ).trim();
+
+              const password = String(
+                formData.get("password") || ""
+              );
+
+              if (!email || !password) {
+                setError(
+                  "Please enter your email and password."
+                );
+                setLoading(false);
+                return;
+              }
+
+              try {
+                const response = await fetch("/api/login", {
+                  method: "POST",
+                  headers: {
+                    "Content-Type": "application/json",
+                  },
+                  body: JSON.stringify({
+                    email,
+                    password,
+                  }),
+                });
+
+                const data = await response.json();
+
+                if (!response.ok) {
+                  setError(
+                    data.error || "Unable to sign in."
+                  );
+                  return;
+                }
+
+                /*
+                 * Tell CartContext that authentication changed.
+                 *
+                 * CartContext will call /api/auth/me, get the
+                 * newly logged-in user's ID, and switch from the
+                 * guest cart to that user's own cart.
+                 */
+                window.dispatchEvent(
+                  new Event("lumora-auth-changed")
+                );
+
+if (data.user?.role === "ADMIN") {
+  window.location.href = "/admin";
+} else {
+  window.location.href = "/account";
+}              } catch {
+                setError(
+                  "Unable to sign in. Please try again."
+                );
+              } finally {
+                setLoading(false);
+              }
             }}
             className="space-y-5"
           >
+            {/* Error */}
+            {error && (
+              <div className="rounded-xl border border-red-100 bg-red-50 px-4 py-3">
+                <p className="text-sm text-red-600 text-center">
+                  {error}
+                </p>
+              </div>
+            )}
+
             {/* Email */}
             <div>
               <label
@@ -65,6 +141,7 @@ export default function LoginPage() {
                 type="email"
                 autoComplete="email"
                 placeholder="you@example.com"
+                required
                 className="w-full px-4 py-3.5 bg-stone-50 border border-stone-200 rounded-xl text-sm text-[#2d2a26] placeholder:text-stone-400 focus:outline-none focus:ring-2 focus:ring-[#8b6f5a]/20 focus:border-[#8b6f5a] transition-all"
               />
             </div>
@@ -91,56 +168,23 @@ export default function LoginPage() {
                 <input
                   id="password"
                   name="password"
-                  type={showPassword ? "text" : "password"}
+                  type={
+                    showPassword ? "text" : "password"
+                  }
                   autoComplete="current-password"
                   placeholder="Enter your password"
-                  className="w-full px-4 py-3.5 pr-12 bg-stone-50 border border-stone-200 rounded-xl text-sm text-[#2d2a26] placeholder:text-stone-400 focus:outline-none focus:ring-2 focus:ring-[#8b6f5a]/20 focus:border-[#8b6f5a] transition-all"
+                  required
+                  className="w-full px-4 py-3.5 pr-16 bg-stone-50 border border-stone-200 rounded-xl text-sm text-[#2d2a26] placeholder:text-stone-400 focus:outline-none focus:ring-2 focus:ring-[#8b6f5a]/20 focus:border-[#8b6f5a] transition-all"
                 />
 
                 <button
                   type="button"
-                  onClick={() => setShowPassword((current) => !current)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 w-8 h-8 flex items-center justify-center text-stone-400 hover:text-[#2d2a26] transition-colors"
-                  aria-label={
-                    showPassword
-                      ? "Hide password"
-                      : "Show password"
+                  onClick={() =>
+                    setShowPassword((value) => !value)
                   }
+                  className="absolute right-4 top-1/2 -translate-y-1/2 text-xs font-medium text-stone-400 hover:text-[#2d2a26] transition-colors"
                 >
-                  {showPassword ? (
-                    <svg
-                      className="w-5 h-5"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="1.7"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        d="M3 3l18 18M10.584 10.587a2 2 0 002.829 2.828M9.88 4.24A9.77 9.77 0 0112 4c5 0 9 3.5 10 8a9.73 9.73 0 01-2.1 4.26M6.61 6.61C4.93 7.84 3.7 9.63 3 12c1 4.5 5 8 9 8a9.77 9.77 0 004.24-.96"
-                      />
-                    </svg>
-                  ) : (
-                    <svg
-                      className="w-5 h-5"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="1.7"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
-                      />
-                      <circle
-                        cx="12"
-                        cy="12"
-                        r="3"
-                      />
-                    </svg>
-                  )}
+                  {showPassword ? "Hide" : "Show"}
                 </button>
               </div>
             </div>
@@ -149,6 +193,7 @@ export default function LoginPage() {
             <label className="flex items-center gap-2.5 cursor-pointer">
               <input
                 type="checkbox"
+                name="remember"
                 className="w-4 h-4 rounded border-stone-300 text-[#8b6f5a] focus:ring-[#8b6f5a]"
               />
 
@@ -160,9 +205,10 @@ export default function LoginPage() {
             {/* Submit */}
             <button
               type="submit"
-              className="w-full bg-[#2d2a26] text-white px-6 py-3.5 rounded-full text-sm font-semibold hover:bg-[#1a1a1a] transition-all shadow-sm hover:shadow-md"
+              disabled={loading}
+              className="w-full bg-[#2d2a26] text-white px-6 py-3.5 rounded-full text-sm font-semibold hover:bg-[#1a1a1a] transition-all shadow-sm hover:shadow-md disabled:opacity-60 disabled:cursor-not-allowed"
             >
-              Sign In
+              {loading ? "Signing In..." : "Sign In"}
             </button>
           </form>
 

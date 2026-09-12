@@ -1,0 +1,332 @@
+[
+  {
+    "id": "table.occasion",
+    "label": "Create table \"occasion\"",
+    "summary": "Creates table \"occasion\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "table",
+        "name": "occasion"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure table \"occasion\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"occasion\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create table \"occasion\"",
+        "sql": "CREATE TABLE \"public\".\"occasion\" (\n  \"createdAt\" timestamptz DEFAULT (now()) NOT NULL,\n  \"description\" text,\n  \"id\" text NOT NULL,\n  \"image\" text,\n  \"isActive\" bool DEFAULT true NOT NULL,\n  \"name\" text NOT NULL,\n  \"slug\" text NOT NULL,\n  \"sortOrder\" int4 DEFAULT 0 NOT NULL,\n  \"updatedAt\" timestamptz DEFAULT (now()) NOT NULL,\n  PRIMARY KEY (\"id\")\n)",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify table \"occasion\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"occasion\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "table.recipient",
+    "label": "Create table \"recipient\"",
+    "summary": "Creates table \"recipient\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "table",
+        "name": "recipient"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure table \"recipient\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"recipient\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create table \"recipient\"",
+        "sql": "CREATE TABLE \"public\".\"recipient\" (\n  \"createdAt\" timestamptz DEFAULT (now()) NOT NULL,\n  \"description\" text,\n  \"id\" text NOT NULL,\n  \"image\" text,\n  \"isActive\" bool DEFAULT true NOT NULL,\n  \"name\" text NOT NULL,\n  \"slug\" text NOT NULL,\n  \"sortOrder\" int4 DEFAULT 0 NOT NULL,\n  \"updatedAt\" timestamptz DEFAULT (now()) NOT NULL,\n  PRIMARY KEY (\"id\")\n)",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify table \"recipient\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"recipient\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "column.public.product.occasion",
+    "label": "Add column \"occasion\" to \"product\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "column",
+        "name": "occasion",
+        "table": "product"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure column \"occasion\" is missing",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "public",
+          "product",
+          "occasion"
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add column \"occasion\"",
+        "sql": "ALTER TABLE \"public\".\"product\" ADD COLUMN \"occasion\" text"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify column \"occasion\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "public",
+          "product",
+          "occasion"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "column.public.product.recipient",
+    "label": "Add column \"recipient\" to \"product\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "column",
+        "name": "recipient",
+        "table": "product"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure column \"recipient\" is missing",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "public",
+          "product",
+          "recipient"
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add column \"recipient\"",
+        "sql": "ALTER TABLE \"public\".\"product\" ADD COLUMN \"recipient\" text"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify column \"recipient\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "public",
+          "product",
+          "recipient"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "unique.occasion.occasion_name_key",
+    "label": "Add unique constraint on \"occasion\" (name)",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "unique",
+        "name": "occasion_name_key",
+        "table": "occasion"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure constraint \"occasion_name_key\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "occasion_name_key",
+          "public",
+          "\"public\".\"occasion\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add unique constraint \"occasion_name_key\"",
+        "sql": "ALTER TABLE \"public\".\"occasion\" ADD CONSTRAINT \"occasion_name_key\" UNIQUE (\"name\")"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify constraint \"occasion_name_key\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "occasion_name_key",
+          "public",
+          "\"public\".\"occasion\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "unique.occasion.occasion_slug_key",
+    "label": "Add unique constraint on \"occasion\" (slug)",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "unique",
+        "name": "occasion_slug_key",
+        "table": "occasion"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure constraint \"occasion_slug_key\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "occasion_slug_key",
+          "public",
+          "\"public\".\"occasion\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add unique constraint \"occasion_slug_key\"",
+        "sql": "ALTER TABLE \"public\".\"occasion\" ADD CONSTRAINT \"occasion_slug_key\" UNIQUE (\"slug\")"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify constraint \"occasion_slug_key\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "occasion_slug_key",
+          "public",
+          "\"public\".\"occasion\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "unique.recipient.recipient_name_key",
+    "label": "Add unique constraint on \"recipient\" (name)",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "unique",
+        "name": "recipient_name_key",
+        "table": "recipient"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure constraint \"recipient_name_key\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "recipient_name_key",
+          "public",
+          "\"public\".\"recipient\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add unique constraint \"recipient_name_key\"",
+        "sql": "ALTER TABLE \"public\".\"recipient\" ADD CONSTRAINT \"recipient_name_key\" UNIQUE (\"name\")"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify constraint \"recipient_name_key\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "recipient_name_key",
+          "public",
+          "\"public\".\"recipient\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "unique.recipient.recipient_slug_key",
+    "label": "Add unique constraint on \"recipient\" (slug)",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "unique",
+        "name": "recipient_slug_key",
+        "table": "recipient"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure constraint \"recipient_slug_key\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "recipient_slug_key",
+          "public",
+          "\"public\".\"recipient\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add unique constraint \"recipient_slug_key\"",
+        "sql": "ALTER TABLE \"public\".\"recipient\" ADD CONSTRAINT \"recipient_slug_key\" UNIQUE (\"slug\")"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify constraint \"recipient_slug_key\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "recipient_slug_key",
+          "public",
+          "\"public\".\"recipient\""
+        ]
+      }
+    ]
+  }
+]

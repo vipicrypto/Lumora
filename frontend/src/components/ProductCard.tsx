@@ -27,18 +27,61 @@ export const ProductCard: React.FC<{ product: Product }> = ({ product }) => {
     }, 2000);
   };
 
+  const images =
+    product.images && product.images.length > 0
+      ? product.images
+      : product.image
+      ? [product.image]
+      : [];
+
+  const primaryImage = images[0] || "";
+
+  const rating = Number(product.rating) || 0;
+  const price = Number(product.price) || 0;
+  const originalPrice =
+    typeof product.originalPrice === "number" &&
+    product.originalPrice > 0
+      ? product.originalPrice
+      : undefined;
+
   return (
     <Link
       href={`/products/${product.id}`}
       className="group block bg-white rounded-2xl border border-stone-100 overflow-hidden hover:shadow-xl hover:border-stone-200 transition-all duration-300"
     >
       <div className="relative aspect-[4/5] overflow-hidden bg-stone-50">
-        <Image
-          src={product.image}
-          alt={product.name}
-          fill
-          className="object-cover transition-transform duration-500 group-hover:scale-105"
-        />
+        {primaryImage ? (
+          <Image
+            src={primaryImage}
+            alt={product.name}
+            fill
+            className="object-cover transition-transform duration-500 group-hover:scale-105"
+            sizes="(min-width: 1024px) 25vw, (min-width: 640px) 50vw, 100vw"
+            unoptimized
+          />
+        ) : (
+          <div className="absolute inset-0 flex items-center justify-center text-stone-300">
+            <svg
+              className="w-10 h-10"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="1.5"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
+              />
+            </svg>
+          </div>
+        )}
+
+        {images.length > 1 && (
+          <span className="absolute top-3 right-3 bg-black/55 text-white text-[10px] font-medium px-2 py-1 rounded-full backdrop-blur-sm">
+            1 / {images.length}
+          </span>
+        )}
 
         {product.isNew && (
           <span className="absolute top-3 left-3 bg-[#2d2a26] text-white text-[10px] font-semibold tracking-wide uppercase px-2.5 py-1 rounded-full">
@@ -46,10 +89,10 @@ export const ProductCard: React.FC<{ product: Product }> = ({ product }) => {
           </span>
         )}
 
-        {product.originalPrice && (
-          <span className="absolute top-3 right-3 bg-[#8b6f5a] text-white text-[10px] font-semibold tracking-wide uppercase px-2.5 py-1 rounded-full">
+        {originalPrice && (
+          <span className="absolute bottom-3 right-3 bg-[#8b6f5a] text-white text-[10px] font-semibold tracking-wide uppercase px-2.5 py-1 rounded-full">
             {Math.round(
-              (1 - product.price / product.originalPrice) * 100
+              (1 - price / originalPrice) * 100
             )}
             % off
           </span>
@@ -114,7 +157,7 @@ export const ProductCard: React.FC<{ product: Product }> = ({ product }) => {
               <svg
                 key={i}
                 className={`w-3.5 h-3.5 ${
-                  i < Math.round(product.rating)
+                  i < Math.round(rating)
                     ? "text-amber-400"
                     : "text-stone-200"
                 }`}
@@ -127,18 +170,18 @@ export const ProductCard: React.FC<{ product: Product }> = ({ product }) => {
           </div>
 
           <span className="text-[11px] text-stone-400">
-            {product.rating.toFixed(1)}
+            {rating.toFixed(1)}
           </span>
         </div>
 
         <div className="flex items-center gap-2">
           <span className="text-base font-semibold text-[#2d2a26]">
-            ${product.price.toFixed(2)}
+            ${price.toFixed(2)}
           </span>
 
-          {product.originalPrice && (
+          {originalPrice && (
             <span className="text-sm text-stone-400 line-through">
-              ${product.originalPrice.toFixed(2)}
+              ${originalPrice.toFixed(2)}
             </span>
           )}
         </div>

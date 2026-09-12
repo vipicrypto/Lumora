@@ -8,9 +8,12 @@ model User {
   orders        Order[]
   wishlistItems WishlistItem[]
   addresses     Address[]
+  reviews       Review[]
 }
 
 enum UserRole {
+  @@type("pg/text@1")
+
   CUSTOMER
   ADMIN
 }
@@ -23,16 +26,72 @@ model Product {
 
   category      String
   categoryId    String?
+  recipient     String?
+  occasion      String?
 
   image         String
   isNew         Boolean
   isActive      Boolean
   stock         Int      @default(0)
+  youtubeVideo  String?
 
-  categoryRef   Category? @relation(fields:[categoryId], references:[id])
+  materials     String?
+  shipping      String?
+  returns       String?
+
+  categoryRef   Category? @relation(fields: [categoryId], references: [id])
 
   orderItems    OrderItem[]
   wishlistItems WishlistItem[]
+  reviews       Review[]
+}
+
+model Review {
+  id               String   @id
+  productId        String
+  userId           String
+
+  rating           Int
+  comment          String?
+  verifiedPurchase Boolean  @default(false)
+
+  createdAt        DateTime
+  updatedAt        DateTime
+
+  product          Product  @relation(fields: [productId], references: [id])
+  user             User     @relation(fields: [userId], references: [id])
+
+  @@unique([productId, userId], map: "review_productId_userId_key")
+  @@check(
+    expression: "(rating >= 1 AND rating <= 5)",
+    name: "review_rating_range_check"
+  )
+}
+
+model HeroSlide {
+  id                String   @id
+  title             String
+  description       String?
+  mediaType         String
+  mediaUrl          String
+  buttonText        String?
+  buttonLink        String?
+  sortOrder         Int
+  isActive          Boolean
+  animation         String   @default("fade")
+  animationDuration Int      @default(600)
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime
+}
+
+model HomeSection {
+  id        String   @id
+  key       String   @unique
+  title     String
+  subtitle  String?
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt temporal.updatedAt()
 }
 
 model Category {
@@ -48,6 +107,30 @@ model Category {
   products    Product[]
 }
 
+model Recipient {
+  id          String   @id
+  name        String   @unique
+  slug        String   @unique
+  description String?
+  image       String?
+  isActive    Boolean  @default(true)
+  sortOrder   Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @default(now())
+}
+
+model Occasion {
+  id          String   @id
+  name        String   @unique
+  slug         String   @unique
+  description String?
+  image       String?
+  isActive    Boolean  @default(true)
+  sortOrder   Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @default(now())
+}
+
 model Order {
   id            String      @id
   userId        String?
@@ -60,7 +143,7 @@ model Order {
   paymentMethod String
   status        OrderStatus
 
-  user          User?       @relation(fields:[userId], references:[id])
+  user          User?       @relation(fields: [userId], references: [id])
   items         OrderItem[]
 }
 
@@ -74,8 +157,8 @@ model OrderItem {
   unitPrice   Decimal
   totalPrice  Decimal
 
-  order       Order    @relation(fields:[orderId], references:[id])
-  product     Product? @relation(fields:[productId], references:[id])
+  order       Order    @relation(fields: [orderId], references: [id])
+  product     Product? @relation(fields: [productId], references: [id])
 }
 
 model WishlistItem {
@@ -83,8 +166,8 @@ model WishlistItem {
   userId    String
   productId String
 
-  user      User    @relation(fields:[userId], references:[id])
-  product   Product @relation(fields:[productId], references:[id])
+  user      User    @relation(fields: [userId], references: [id])
+  product   Product @relation(fields: [productId], references: [id])
 }
 
 model Address {
@@ -103,10 +186,12 @@ model Address {
   phone        String?
   isDefault    Boolean
 
-  user         User    @relation(fields:[userId], references:[id])
+  user         User    @relation(fields: [userId], references: [id])
 }
 
 enum OrderStatus {
+  @@type("pg/text@1")
+
   PENDING
   CONFIRMED
   PROCESSING

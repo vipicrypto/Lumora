@@ -3,14 +3,39 @@
 import React, { useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { ProductCard } from "@/components/ProductCard";
 import { Product } from "@/data/products";
 import { useCart } from "@/context/CartContext";
 import { useWishlist } from "@/context/WishlistContext";
+import Reviews from "./Reviews";
 
+
+function getYouTubeEmbedUrl(value: string) {
+  try {
+    const url = new URL(value);
+    if (url.hostname === "youtu.be" || url.hostname === "www.youtu.be") {
+      const id = url.pathname.slice(1).split("/")[0];
+      return id ? `https://www.youtube.com/embed/${id}` : value;
+    }
+
+    if (url.hostname.includes("youtube.com")) {
+      const watchId = url.searchParams.get("v");
+      if (watchId) return `https://www.youtube.com/embed/${watchId}`;
+      const embedMatch = url.pathname.match(/^\/embed\/([^/]+)/);
+      if (embedMatch?.[1]) return `https://www.youtube.com/embed/${embedMatch[1]}`;
+    }
+  } catch {
+    // The admin API validates saved URLs.
+  }
+  return value;
+}
 
 interface ProductDetailsProps {
-  product: Product;
+  product: Product & {
+    youtubeVideo?: string | null;
+    youtubeEmbedUrl?: string | null;
+  };
   related: Product[];
 }
 
@@ -21,10 +46,16 @@ export default function ProductDetails({
   const { toggleWishlist, isWishlisted } = useWishlist();
   const images =
     product.images && product.images.length > 0
-      ? product.images
-      : [product.image];
+      ? product.images.filter(
+          (img) => typeof img === "string" && img.length > 0
+        )
+      : product.image
+      ? [product.image]
+      : [];
 
-  const [selectedImage, setSelectedImage] = useState(images[0]);
+  const [selectedImage, setSelectedImage] = useState(
+    images[0] ?? ""
+  );
   const [selectedSize, setSelectedSize] = useState<string | undefined>(
     undefined
   );
@@ -35,6 +66,7 @@ export default function ProductDetails({
   const [cartMessage, setCartMessage] = useState("");
 const [wishlistMessage, setWishlistMessage] = useState("");
   const { addToCart } = useCart();
+  const router = useRouter();
 
   const handleAddToCart = () => {
     if (product.sizes && product.sizes.length > 0 && !selectedSize) {
@@ -51,6 +83,27 @@ const [wishlistMessage, setWishlistMessage] = useState("");
 
     setCartMessage("Added to cart!");
     setTimeout(() => setCartMessage(""), 2500);
+  };
+
+  // Buy Now mirrors Add to Cart's size/color validation so a product with
+  // required variants can't bypass the prompt by using Buy Now instead.
+  // It adds the selected item to the existing cart (no replacement) and
+  // then jumps straight to /checkout, which is already wired to consume
+  // cartItems / cartSubtotal from CartContext and POST to /api/orders.
+  const handleBuyNow = () => {
+    if (product.sizes && product.sizes.length > 0 && !selectedSize) {
+      setCartMessage("Please select a size.");
+      return;
+    }
+
+    if (product.colors && product.colors.length > 0 && !selectedColor) {
+      setCartMessage("Please select a color.");
+      return;
+    }
+
+    addToCart(product, quantity, selectedSize, selectedColor);
+
+    router.push("/checkout");
   };
 
   const increaseQuantity = () => {
@@ -124,40 +177,60 @@ const [wishlistMessage, setWishlistMessage] = useState("");
         {/* Image Gallery */}
         <div className="space-y-4">
           <div className="relative aspect-[4/5] rounded-2xl overflow-hidden bg-stone-100 shadow-sm">
-            <Image
-              src={selectedImage}
-              alt={product.name}
-              fill
-              className="object-cover"
-              priority
-              sizes="(max-width: 1024px) 100vw, 50vw"
-            />
+            {selectedImage ? (
+              <Image
+                src={selectedImage}
+                alt={product.name}
+                fill
+                className="object-cover"
+                priority
+                sizes="(max-width: 1024px) 100vw, 50vw"
+              />
+            ) : (
+              <div className="absolute inset-0 flex items-center justify-center text-stone-300">
+                <svg
+                  className="h-16 w-16"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="1.5"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
+                  />
+                </svg>
+              </div>
+            )}
           </div>
 
-          <div className="grid grid-cols-4 gap-3">
-            {images.map((img, i) => (
-              <button
-                key={i}
-                type="button"
-                onClick={() => setSelectedImage(img)}
-                className={`relative aspect-[4/5] rounded-xl overflow-hidden bg-stone-100 transition-all focus:outline-none focus:ring-2 focus:ring-[#8b6f5a] ${
-                  selectedImage === img
-                    ? "ring-2 ring-[#8b6f5a]"
-                    : "hover:ring-2 hover:ring-[#8b6f5a]"
-                }`}
-                aria-label={`View image ${i + 1}`}
-                aria-pressed={selectedImage === img}
-              >
-                <Image
-                  src={img}
-                  alt={`${product.name} view ${i + 1}`}
-                  fill
-                  className="object-cover"
-                  sizes="(max-width: 1024px) 25vw, 12vw"
-                />
-              </button>
-            ))}
-          </div>
+          {images.length > 1 && (
+            <div className="grid grid-cols-4 gap-3">
+              {images.map((img, i) => (
+                <button
+                  key={i}
+                  type="button"
+                  onClick={() => setSelectedImage(img)}
+                  className={`relative aspect-[4/5] rounded-xl overflow-hidden bg-stone-100 transition-all focus:outline-none focus:ring-2 focus:ring-[#8b6f5a] ${
+                    selectedImage === img
+                      ? "ring-2 ring-[#8b6f5a]"
+                      : "hover:ring-2 hover:ring-[#8b6f5a]"
+                  }`}
+                  aria-label={`View image ${i + 1}`}
+                  aria-pressed={selectedImage === img}
+                >
+                  <Image
+                    src={img}
+                    alt={`${product.name} view ${i + 1}`}
+                    fill
+                    className="object-cover"
+                    sizes="(max-width: 1024px) 25vw, 12vw"
+                  />
+                </button>
+              ))}
+            </div>
+          )}
         </div>
 
         {/* Product Info */}
@@ -196,7 +269,8 @@ const [wishlistMessage, setWishlistMessage] = useState("");
               <span className="text-sm text-stone-300">|</span>
 
               <span className="text-sm text-stone-500">
-                {product.reviewCount || 0} reviews
+                {product.reviewCount || 0}{" "}
+                {product.reviewCount === 1 ? "review" : "reviews"}
               </span>
             </div>
           </div>
@@ -225,6 +299,26 @@ const [wishlistMessage, setWishlistMessage] = useState("");
           <p className="text-[#5a5248] leading-relaxed">
             {product.description}
           </p>
+
+          {product.youtubeVideo && (
+            <div className="pt-2">
+              <h3 className="text-xs font-semibold tracking-[0.1em] uppercase text-[#2d2a26] mb-3">
+                Product Video
+              </h3>
+              <div className="relative aspect-video overflow-hidden rounded-2xl bg-stone-100 shadow-sm">
+                <iframe
+                  src={
+                    product.youtubeEmbedUrl ??
+                    getYouTubeEmbedUrl(product.youtubeVideo)
+                  }
+                  title={`${product.name} product video`}
+                  className="absolute inset-0 h-full w-full"
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                  allowFullScreen
+                />
+              </div>
+            </div>
+          )}
 
           {/* Size Selector */}
           {product.sizes && product.sizes.length > 0 && (
@@ -374,6 +468,7 @@ const [wishlistMessage, setWishlistMessage] = useState("");
 
             <button
               type="button"
+              onClick={handleBuyNow}
               className="flex-1 bg-[#8b6f5a] text-white px-6 py-3.5 rounded-full text-sm font-semibold hover:bg-[#6d5540] transition-all shadow-sm hover:shadow-md flex items-center justify-center gap-2"
             >
               Buy Now
@@ -469,6 +564,9 @@ onClick={() => {
           </div>
         </div>
       </section>
+
+      {/* Customer Reviews */}
+      <Reviews productId={product.id} />
 
       {/* Related Products */}
       <section className="mb-8">

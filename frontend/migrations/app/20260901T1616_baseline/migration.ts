@@ -221,3 +221,4 @@ export default class M extends Migration<never, End> {
 }
 
 MigrationCLI.run(import.meta.url, M);
+

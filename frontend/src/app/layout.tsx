@@ -1,44 +1,48 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+
 import "./globals.css";
-import { Header } from "../components/Header";
-import { Footer } from "../components/Footer";
+
 import { CartProvider } from "../context/CartContext";
 import { WishlistProvider } from "../context/WishlistContext";
-
-const geistSans = Geist({
-  variable: "--font-geist-sans",
-  subsets: ["latin"],
-});
-
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
-});
+import AppShell from "./AppShell";
+import { db } from "@/prisma/db";
 
 export const metadata: Metadata = {
   title: "Lumora — Thoughtful Gifts",
   description: "Curated gifts for every person, every occasion.",
 };
 
-export default function RootLayout({
+async function getInitialCategories() {
+  try {
+    const allCategories = await db.orm.public.Category.all();
+
+    return allCategories
+      .filter((category) => category.isActive)
+      .sort((a, b) => a.name.localeCompare(b.name))
+      .map((category) => ({
+        name: category.name,
+        href: `/products?category=${encodeURIComponent(category.slug)}`,
+      }));
+  } catch {
+    return [];
+  }
+}
+
+export default async function RootLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
+  const initialCategories = await getInitialCategories();
+
   return (
-    <html
-      lang="en"
-      className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
-    >
+    <html lang="en" className="h-full antialiased">
       <body className="min-h-full flex flex-col bg-[#faf9f7] text-[#1a1a1a] font-sans">
         <CartProvider>
           <WishlistProvider>
-            <Header />
-            <main className="flex-1 w-full max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-10 py-8 md:py-12">
+            <AppShell initialCategories={initialCategories}>
               {children}
-            </main>
-            <Footer />
+            </AppShell>
           </WishlistProvider>
         </CartProvider>
       </body>

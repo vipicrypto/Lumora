@@ -79,3 +79,4 @@ export default class M extends Migration<Start, End> {
 }
 
 MigrationCLI.run(import.meta.url, M);
+
