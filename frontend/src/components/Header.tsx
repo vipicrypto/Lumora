@@ -454,8 +454,7 @@ const [searchQuery, setSearchQuery] = useState("");
           <nav className="flex items-center gap-1 md:gap-3">
             <Link
               href="/account"
-              className="hidden sm:flex items-center gap-1.5 px-3 py-2 text-sm font-medium text-[#2d2a26] hover:text-[#8b6f5a] transition-colors"
-            >
+className="flex items-center gap-1.5 px-2 sm:px-3 py-2 text-sm font-medium text-[#2d2a26] hover:text-[#8b6f5a] transition-colors"            >
               <svg
                 className="w-4 h-4"
                 fill="none"
@@ -481,8 +480,7 @@ const [searchQuery, setSearchQuery] = useState("");
 
             <Link
               href="/wishlist"
-              className="hidden sm:flex items-center gap-1.5 px-3 py-2 text-sm font-medium text-[#2d2a26] hover:text-[#8b6f5a] transition-colors"
-            >
+className="flex items-center gap-1.5 px-2 sm:px-3 py-2 text-sm font-medium text-[#2d2a26] hover:text-[#8b6f5a] transition-colors"            >
               <svg
                 className="w-4 h-4"
                 fill="none"

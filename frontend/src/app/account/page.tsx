@@ -3,7 +3,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import { useEffect, useState } from "react";
-
+import { useRouter } from "next/navigation";
 interface User {
   id: string;
   name?: string;
@@ -181,6 +181,7 @@ function getStatusClass(status: string) {
 ------------------------------------------------------------- */
 
 export default function AccountPage() {
+  const router = useRouter();
   const [user, setUser] = useState<User | null>(null);
 
   const [loadingUser, setLoadingUser] = useState(true);
@@ -259,14 +260,25 @@ export default function AccountPage() {
           cache: "no-store",
         });
 
-        const data = await response.json();
+const data =
+  await response.json();
 
-        if (!response.ok || !data.success) {
-          throw new Error(
-            data.error ||
-              "Unable to load your recent orders."
-          );
-        }
+if (response.status === 401) {
+  router.replace(
+    "/login?redirect=/account"
+  );
+  return;
+}
+
+if (
+  !response.ok ||
+  !data.success
+) {
+  throw new Error(
+    data.error ||
+      "Unable to load your recent orders."
+  );
+}
 
         const fetchedOrders: Order[] = Array.isArray(
           data.orders
