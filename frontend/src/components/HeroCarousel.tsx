@@ -195,16 +195,16 @@ export const HeroCarousel: React.FC<HeroCarouselProps> = ({ fallback }) => {
     (active.mediaUrl && isLikelyVideoUrl(active.mediaUrl));
 
   return (
-    <section className="relative w-full overflow-visible px-3 py-5 sm:px-5 sm:py-7 md:px-8 md:py-8 lg:px-10">
-      {/*
+<section className="relative w-full overflow-visible px-0 py-5 sm:py-7 md:py-8">
+        {/*
        * Main carousel frame.
        *
        * `relative` is important here because the arrows,
        * indicators and floating card are positioned relative
        * to this container instead of the whole page.
        */}
-      <div className="relative mx-auto w-full max-w-7xl">
-        <div className="grid w-full grid-cols-1 items-center gap-7 sm:gap-9 lg:grid-cols-2 lg:gap-12 xl:gap-16">
+<div className="relative mx-0 w-full  rounded-[20px] bg-[#FFFFFF] px-6 py-8">
+          <div className="grid w-full grid-cols-1 items-center gap-7 sm:gap-9 lg:grid-cols-2 lg:gap-12 xl:gap-16">
           {/*
            * LEFT / TEXT CONTENT
            */}

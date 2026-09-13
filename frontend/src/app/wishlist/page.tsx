@@ -194,13 +194,11 @@ export default function WishlistPage() {
                   {/* Price */}
                   <div className="flex items-center gap-2 mt-3">
                     <span className="text-lg font-semibold text-[#2d2a26]">
-                      ${product.price.toFixed(2)}
-                    </span>
+₹{product.price.toFixed(2)}                    </span>
 
                     {product.originalPrice && (
                       <span className="text-sm text-stone-400 line-through">
-                        ${product.originalPrice.toFixed(2)}
-                      </span>
+₹{product.originalPrice.toFixed(2)}                      </span>
                     )}
                   </div>
 

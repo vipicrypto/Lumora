@@ -550,148 +550,203 @@ function SearchContent() {
       </div>
 
       {/* Filters */}
-      <div className="mb-8 flex flex-col gap-5 rounded-2xl border border-stone-100 bg-white p-4 sm:p-5">
-        {/* Categories */}
-        <div>
-          <p className="mb-3 text-xs font-semibold uppercase tracking-[0.12em] text-stone-500">
-            Categories
-          </p>
+<div className="mb-8 overflow-hidden rounded-2xl border border-[#eee9e3] bg-white shadow-[0_8px_30px_rgba(45,42,38,0.04)]">        {/* Filter Header */}
+        <div className="flex flex-col gap-3 border-b border-stone-100 bg-stone-50/60 px-5 py-5 sm:flex-row sm:items-center sm:justify-between sm:px-6">
+          <div className="flex items-start gap-3">
+            <div className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#2d2a26] text-white">
+              <svg
+                className="h-4 w-4"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="1.8"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <path d="M4 6h16" />
+                <path d="M7 12h10" />
+                <path d="M10 18h4" />
+              </svg>
+            </div>
 
-          <div className="flex flex-wrap gap-2">
-            <button
-              type="button"
-              onClick={() =>
-                setSelectedCategory("All")
-              }
-              className={`rounded-full px-4 py-2 text-xs font-medium transition-all ${
-                selectedCategory === "All"
-                  ? "bg-[#2d2a26] text-white"
-                  : "border border-stone-200 bg-white text-[#5a5248] hover:bg-stone-50"
-              }`}
-            >
-              All
-            </button>
+            <div>
+              <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-[#8b6f5a]">
+                Filter & Refine
+              </p>
 
-            {categories.map((category) => (
+              <h2 className="mt-1 font-serif text-xl font-semibold text-[#2d2a26] sm:text-2xl">
+                Find what you&apos;re looking for
+              </h2>
+
+              <p className="mt-1 text-xs text-stone-500">
+                Browse by category, recipient or occasion.
+              </p>
+            </div>
+          </div>
+
+          {hasActiveFilters && (
+            <div className="inline-flex w-fit items-center rounded-full border border-stone-200 bg-white px-3 py-1.5 text-[11px] font-medium text-[#5a5248]">
+              Filters applied
+            </div>
+          )}
+        </div>
+
+        {/* Filter Groups */}
+        <div className="space-y-0 px-5 sm:px-6">
+          {/* Categories */}
+          <div className="border-b border-stone-100 py-5">
+            <div className="mb-3 flex items-center gap-2">
+              <span className="h-1 w-1 rounded-full bg-[#8b6f5a]" />
+
+              <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-stone-500">
+                Categories
+              </p>
+            </div>
+
+            <div className="flex flex-wrap gap-2">
               <button
-                key={category.slug}
                 type="button"
                 onClick={() =>
-                  setSelectedCategory(
-                    category.name
-                  )
+                  setSelectedCategory("All")
                 }
-                className={`rounded-full px-4 py-2 text-xs font-medium transition-all ${
-                  selectedCategory ===
-                  category.name
-                    ? "bg-[#2d2a26] text-white"
-                    : "border border-stone-200 bg-white text-[#5a5248] hover:bg-stone-50"
+                className={`rounded-full px-4 py-2.5 text-xs font-medium transition-all ${
+                  selectedCategory === "All"
+                    ? "bg-[#2d2a26] text-white shadow-sm"
+                    : "border border-stone-200 bg-white text-[#5a5248] hover:border-stone-300 hover:bg-stone-50"
                 }`}
               >
-                {category.name}
+                All
               </button>
-            ))}
-          </div>
-        </div>
 
-        {/* Recipient */}
-        <div>
-          <p className="mb-3 text-xs font-semibold uppercase tracking-[0.12em] text-stone-500">
-            Shop For
-          </p>
-
-          <div className="flex flex-wrap gap-2">
-            <button
-              type="button"
-              onClick={() =>
-                setSelectedRecipient("All")
-              }
-              className={`rounded-full px-4 py-2 text-xs font-medium transition-all ${
-                selectedRecipient === "All"
-                  ? "bg-[#2d2a26] text-white"
-                  : "border border-stone-200 bg-white text-[#5a5248] hover:bg-stone-50"
-              }`}
-            >
-              Everyone
-            </button>
-
-            {recipientOptions.map(
-              (recipient) => (
+              {categories.map((category) => (
                 <button
-                  key={recipient.id}
+                  key={category.slug}
                   type="button"
                   onClick={() =>
-                    setSelectedRecipient(
+                    setSelectedCategory(
+                      category.name
+                    )
+                  }
+                  className={`rounded-full px-4 py-2.5 text-xs font-medium transition-all ${
+                    selectedCategory ===
+                    category.name
+                      ? "bg-[#2d2a26] text-white shadow-sm"
+                      : "border border-stone-200 bg-white text-[#5a5248] hover:border-stone-300 hover:bg-stone-50"
+                  }`}
+                >
+                  {category.name}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Shop For */}
+          <div className="border-b border-stone-100 py-5">
+            <div className="mb-3 flex items-center gap-2">
+              <span className="h-1 w-1 rounded-full bg-[#8b6f5a]" />
+
+              <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-stone-500">
+                Shop For
+              </p>
+            </div>
+
+            <div className="flex flex-wrap gap-2">
+              <button
+                type="button"
+                onClick={() =>
+                  setSelectedRecipient("All")
+                }
+                className={`rounded-full px-4 py-2.5 text-xs font-medium transition-all ${
+                  selectedRecipient === "All"
+                    ? "bg-[#2d2a26] text-white shadow-sm"
+                    : "border border-stone-200 bg-white text-[#5a5248] hover:border-stone-300 hover:bg-stone-50"
+                }`}
+              >
+                Everyone
+              </button>
+
+              {recipientOptions.map(
+                (recipient) => (
+                  <button
+                    key={recipient.id}
+                    type="button"
+                    onClick={() =>
+                      setSelectedRecipient(
+                        recipient.name
+                      )
+                    }
+                    className={`rounded-full px-4 py-2.5 text-xs font-medium transition-all ${
+                      selectedRecipient ===
                       recipient.name
-                    )
-                  }
-                  className={`rounded-full px-4 py-2 text-xs font-medium transition-all ${
-                    selectedRecipient ===
-                    recipient.name
-                      ? "bg-[#2d2a26] text-white"
-                      : "border border-stone-200 bg-white text-[#5a5248] hover:bg-stone-50"
-                  }`}
-                >
-                  {recipient.name}
-                </button>
-              )
-            )}
+                        ? "bg-[#2d2a26] text-white shadow-sm"
+                        : "border border-stone-200 bg-white text-[#5a5248] hover:border-stone-300 hover:bg-stone-50"
+                    }`}
+                  >
+                    {recipient.name}
+                  </button>
+                )
+              )}
+            </div>
           </div>
-        </div>
 
-        {/* Occasion */}
-        <div>
-          <p className="mb-3 text-xs font-semibold uppercase tracking-[0.12em] text-stone-500">
-            Occasion
-          </p>
+          {/* Occasion */}
+          <div className="py-5">
+            <div className="mb-3 flex items-center gap-2">
+              <span className="h-1 w-1 rounded-full bg-[#8b6f5a]" />
 
-          <div className="flex flex-wrap gap-2">
-            <button
-              type="button"
-              onClick={() =>
-                setSelectedOccasion("All")
-              }
-              className={`rounded-full px-4 py-2 text-xs font-medium transition-all ${
-                selectedOccasion === "All"
-                  ? "bg-[#2d2a26] text-white"
-                  : "border border-stone-200 bg-white text-[#5a5248] hover:bg-stone-50"
-              }`}
-            >
-              All Occasions
-            </button>
+              <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-stone-500">
+                Occasion
+              </p>
+            </div>
 
-            {occasionOptions.map(
-              (occasion) => (
-                <button
-                  key={occasion.id}
-                  type="button"
-                  onClick={() =>
-                    setSelectedOccasion(
+            <div className="flex flex-wrap gap-2">
+              <button
+                type="button"
+                onClick={() =>
+                  setSelectedOccasion("All")
+                }
+                className={`rounded-full px-4 py-2.5 text-xs font-medium transition-all ${
+                  selectedOccasion === "All"
+                    ? "bg-[#2d2a26] text-white shadow-sm"
+                    : "border border-stone-200 bg-white text-[#5a5248] hover:border-stone-300 hover:bg-stone-50"
+                }`}
+              >
+                All Occasions
+              </button>
+
+              {occasionOptions.map(
+                (occasion) => (
+                  <button
+                    key={occasion.id}
+                    type="button"
+                    onClick={() =>
+                      setSelectedOccasion(
+                        occasion.name
+                      )
+                    }
+                    className={`rounded-full px-4 py-2.5 text-xs font-medium transition-all ${
+                      selectedOccasion ===
                       occasion.name
-                    )
-                  }
-                  className={`rounded-full px-4 py-2 text-xs font-medium transition-all ${
-                    selectedOccasion ===
-                    occasion.name
-                      ? "bg-[#2d2a26] text-white"
-                      : "border border-stone-200 bg-white text-[#5a5248] hover:bg-stone-50"
-                  }`}
-                >
-                  {occasion.name}
-                </button>
-              )
-            )}
+                        ? "bg-[#2d2a26] text-white shadow-sm"
+                        : "border border-stone-200 bg-white text-[#5a5248] hover:border-stone-300 hover:bg-stone-50"
+                    }`}
+                  >
+                    {occasion.name}
+                  </button>
+                )
+              )}
+            </div>
           </div>
         </div>
 
-        {/* Sort */}
-        <div className="flex flex-col gap-4 border-t border-stone-100 pt-4 sm:flex-row sm:items-center sm:justify-end">
-          <div className="flex items-center gap-3">
+        {/* Sort Bar */}
+        <div className="flex flex-col gap-4 border-t border-stone-100 bg-stone-50/40 px-5 py-4 sm:flex-row sm:items-center sm:justify-end sm:px-6">
+          <div className="flex items-center justify-between gap-4 sm:justify-end">
             <label
               htmlFor="sort"
-              className="text-xs font-medium text-stone-500"
+              className="text-[10px] font-semibold uppercase tracking-[0.14em] text-stone-500"
             >
-              Sort
+              Sort by
             </label>
 
             <select
@@ -702,7 +757,7 @@ function SearchContent() {
                   event.target.value as SortOption
                 )
               }
-              className="rounded-full border border-stone-200 bg-white px-4 py-2 text-xs text-[#2d2a26] outline-none"
+              className="rounded-full border border-stone-200 bg-white px-4 py-2.5 text-xs font-medium text-[#2d2a26] outline-none transition focus:border-stone-400"
             >
               <option value="featured">
                 Featured
@@ -725,9 +780,9 @@ function SearchContent() {
               <button
                 type="button"
                 onClick={clearFilters}
-                className="text-xs font-medium text-[#8b6f5a] hover:underline"
+                className="text-xs font-medium text-[#8b6f5a] transition hover:text-[#2d2a26] hover:underline"
               >
-                Clear
+                Clear filters
               </button>
             )}
           </div>

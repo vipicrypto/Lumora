@@ -1096,7 +1096,7 @@ export default function AdminProductsPage() {
                 event.target.value
               )
             }
-            placeholder="e.g. Ships in 2-3 business days. Free delivery on orders over $50..."
+placeholder="e.g. Ships in 2-3 business days. Free delivery on orders over ₹4,500..."
             rows={3}
             className="w-full resize-none rounded-xl border border-neutral-200 bg-white px-4 py-3 text-sm text-black outline-none transition focus:border-black"
           />

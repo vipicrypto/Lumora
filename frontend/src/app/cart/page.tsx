@@ -5,15 +5,15 @@ import Link from "next/link";
 import { useMemo } from "react";
 import { useCart } from "@/context/CartContext";
 
-const FREE_SHIPPING_THRESHOLD = 100;
+const FREE_SHIPPING_THRESHOLD = 4500;
 
 function formatPrice(value: number) {
-  return new Intl.NumberFormat("en-US", {
+  return new Intl.NumberFormat("en-IN", {
     style: "currency",
-    currency: "USD",
+    currency: "INR",
+    maximumFractionDigits: 2,
   }).format(value);
 }
-
 export default function CartPage() {
   const {
     cartItems,

@@ -277,14 +277,12 @@ const [wishlistMessage, setWishlistMessage] = useState("");
 
           <div className="flex items-baseline gap-3">
             <span className="text-3xl font-semibold text-[#2d2a26]">
-              ${product.price.toFixed(2)}
-            </span>
+₹{product.price.toFixed(2)}            </span>
 
             {product.originalPrice && (
               <>
                 <span className="text-xl text-stone-400 line-through">
-                  ${product.originalPrice.toFixed(2)}
-                </span>
+₹{product.originalPrice.toFixed(2)}                </span>
 
                 <span className="text-sm font-semibold text-[#8b6f5a] bg-[#8b6f5a]/10 px-2 py-0.5 rounded-full">
                   {Math.round(

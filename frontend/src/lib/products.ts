@@ -31,7 +31,7 @@ export interface DatabaseProduct {
 const DEFAULT_RATING = 0;
 const DEFAULT_REVIEW_COUNT = 0;
 const DEFAULT_SHIPPING =
-  "Free standard shipping on orders over $50. Standard delivery arrives in 5–7 business days. Express shipping (2–3 business days) is available at checkout.";
+  "Free standard shipping on orders over ₹4,500. Standard delivery arrives in 5–7 business days. Express shipping (2–3 business days) is available at checkout.";
 const DEFAULT_RETURNS =
   "Not in love? Return any item within 30 days for a full refund. Items must be unused and in their original packaging. We cover the return label.";
 

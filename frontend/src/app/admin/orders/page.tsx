@@ -525,8 +525,7 @@ export default function AdminOrdersPage() {
                       </p>
 
                       <p className="text-base font-semibold text-[#2d2a26]">
-                        ${order.total.toFixed(2)}
-                      </p>
+₹{order.total.toFixed(2)}                      </p>
                     </div>
 
                     {/* Actions */}
