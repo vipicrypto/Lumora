@@ -24,7 +24,13 @@ type NavLink = {
   href: string;
 };
 
-export const Header: React.FC = () => {
+type HeaderProps = {
+  initialCategories?: NavLink[];
+};
+
+export const Header: React.FC<HeaderProps> = ({
+  initialCategories = [],
+}) => {
   const router = useRouter();
 
   const { cartItemCount } = useCart();
@@ -35,7 +41,8 @@ export const Header: React.FC = () => {
      ========================================================= */
 
   const [searchQuery, setSearchQuery] = useState("");
-  const [suggestions, setSuggestions] = useState<SearchProduct[]>([]);
+  const [suggestions, setSuggestions] =
+    useState<SearchProduct[]>([]);
   const [showDropdown, setShowDropdown] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [activeIndex, setActiveIndex] = useState(-1);
@@ -47,8 +54,8 @@ export const Header: React.FC = () => {
 
   const [siteLogo, setSiteLogo] = useState<string | null>(null);
 
-  const [navLinks, setNavLinks] = useState<NavLink[]>([]);
-
+  const [navLinks, setNavLinks] =
+    useState<NavLink[]>(initialCategories);
   /* =========================================================
      REFS
      ========================================================= */
