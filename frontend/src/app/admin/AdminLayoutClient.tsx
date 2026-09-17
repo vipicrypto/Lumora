@@ -74,14 +74,64 @@ export default function AdminLayoutClient({
       href: "/admin/home-sections",
       icon: "▥",
     },
+
+    {
+  label: "Newsletter",
+  href: "/admin/newsletter",
+  icon: (
+    <svg
+      className="w-5 h-5"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      viewBox="0 0 24 24"
+    >
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        d="M3 7.5A2.5 2.5 0 015.5 5h13A2.5 2.5 0 0121 7.5v9a2.5 2.5 0 01-2.5 2.5h-13A2.5 2.5 0 013 16.5v-9z"
+      />
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        d="M4 7l8 6 8-6"
+      />
+    </svg>
+  ),
+},
+
+{
+  label: "Settings",
+  href: "/admin/settings",
+  icon: (
+    <svg
+      className="w-5 h-5"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      viewBox="0 0 24 24"
+    >
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        d="M12 15.5a3.5 3.5 0 100-7 3.5 3.5 0 000 7z"
+      />
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        d="M19.4 15a1.7 1.7 0 00.34 1.88l.06.06-1.8 1.8-.06-.06a1.7 1.7 0 00-1.88-.34 1.7 1.7 0 00-1.03 1.56V22h-2.55v-.1a1.7 1.7 0 00-1.03-1.56 1.7 1.7 0 00-1.88.34l-.06.06-1.8-1.8.06-.06A1.7 1.7 0 008.1 15a1.7 1.7 0 00-1.56-1.03H6.45v-2.55h.09A1.7 1.7 0 008.1 10.4a1.7 1.7 0 00-.34-1.88L7.7 8.46l1.8-1.8.06.06a1.7 1.7 0 001.88.34 1.7 1.7 0 001.03-1.56V5h2.55v.1a1.7 1.7 0 001.03 1.56 1.7 1.7 0 001.88-.34l.06-.06 1.8 1.8-.06.06A1.7 1.7 0 0019.4 10.4a1.7 1.7 0 001.56 1.03h.09v2.55h-.09A1.7 1.7 0 0019.4 15z"
+      />
+    </svg>
+  ),
+},
   ];
 
   return (
     <div className="min-h-screen bg-neutral-50">
       <div className="flex min-h-screen">
         {/* Sidebar */}
-        <aside className="hidden w-64 shrink-0 border-r border-neutral-200 bg-white lg:flex lg:flex-col">
-          <div className="border-b border-neutral-200 px-6 py-6">
+<aside className="hidden w-64 shrink-0 border-r border-neutral-200 bg-white lg:flex lg:flex-col sticky top-0 h-screen overflow-hidden">
+            <div className="border-b border-neutral-200 px-6 py-6">
             <Link
               href="/admin"
               className="block"

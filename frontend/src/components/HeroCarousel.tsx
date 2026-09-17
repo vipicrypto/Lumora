@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 
 type HeroSlide = {
   id: string;
@@ -25,6 +25,7 @@ type HeroCarouselProps = {
 const AUTOPLAY_INTERVAL = 6500;
 const DEFAULT_ANIMATION = "fade";
 const DEFAULT_DURATION = 600;
+const SWIPE_THRESHOLD = 50;
 
 function normalizeMediaType(value: string): "IMAGE" | "VIDEO" {
   return value?.toUpperCase() === "VIDEO" ? "VIDEO" : "IMAGE";
@@ -51,9 +52,9 @@ export const HeroCarousel: React.FC<HeroCarouselProps> = ({ fallback }) => {
   const [activeIndex, setActiveIndex] = useState(0);
   const [isAnimating, setIsAnimating] = useState(false);
 
-  /*
-   * Load hero slides from the database/API.
-   */
+  const touchStartX = useRef<number | null>(null);
+  const touchStartY = useRef<number | null>(null);
+
   useEffect(() => {
     let cancelled = false;
 
@@ -72,7 +73,7 @@ export const HeroCarousel: React.FC<HeroCarouselProps> = ({ fallback }) => {
             .filter((slide: HeroSlide) => slide?.isActive !== false)
             .sort(
               (a: HeroSlide, b: HeroSlide) =>
-                (a.sortOrder ?? 0) - (b.sortOrder ?? 0)
+                Number(a.sortOrder ?? 0) - Number(b.sortOrder ?? 0)
             )
             .map(normalizeSlide);
 
@@ -80,7 +81,9 @@ export const HeroCarousel: React.FC<HeroCarouselProps> = ({ fallback }) => {
         } else {
           setSlides([]);
         }
-      } catch {
+      } catch (error) {
+        console.error("Hero carousel load error:", error);
+
         if (!cancelled) {
           setSlides([]);
         }
@@ -94,9 +97,6 @@ export const HeroCarousel: React.FC<HeroCarouselProps> = ({ fallback }) => {
     };
   }, []);
 
-  /*
-   * Resolve API slides first, then fallback slides.
-   */
   const resolvedSlides = useMemo<HeroSlide[]>(() => {
     if (slides && slides.length > 0) {
       return slides.map(normalizeSlide);
@@ -111,9 +111,6 @@ export const HeroCarousel: React.FC<HeroCarouselProps> = ({ fallback }) => {
 
   const total = resolvedSlides.length;
 
-  /*
-   * Keep active index valid if slides are removed/changed.
-   */
   useEffect(() => {
     if (total === 0) {
       setActiveIndex(0);
@@ -125,9 +122,6 @@ export const HeroCarousel: React.FC<HeroCarouselProps> = ({ fallback }) => {
     }
   }, [activeIndex, total]);
 
-  /*
-   * Auto-play.
-   */
   useEffect(() => {
     if (total <= 1) return;
 
@@ -140,9 +134,6 @@ export const HeroCarousel: React.FC<HeroCarouselProps> = ({ fallback }) => {
     };
   }, [total]);
 
-  /*
-   * Navigate to a slide.
-   */
   const goTo = (index: number) => {
     if (isAnimating || total <= 1) return;
 
@@ -173,11 +164,56 @@ export const HeroCarousel: React.FC<HeroCarouselProps> = ({ fallback }) => {
     goTo((activeIndex + 1) % total);
   };
 
+  const handleTouchStart = (
+    event: React.TouchEvent<HTMLDivElement>
+  ) => {
+    if (total <= 1) return;
+
+    const touch = event.touches[0];
+
+    touchStartX.current = touch.clientX;
+    touchStartY.current = touch.clientY;
+  };
+
+  const handleTouchEnd = (
+    event: React.TouchEvent<HTMLDivElement>
+  ) => {
+    if (
+      total <= 1 ||
+      touchStartX.current === null ||
+      touchStartY.current === null
+    ) {
+      return;
+    }
+
+    const touch = event.changedTouches[0];
+
+    const deltaX = touch.clientX - touchStartX.current;
+    const deltaY = touch.clientY - touchStartY.current;
+
+    const isHorizontalSwipe =
+      Math.abs(deltaX) >= SWIPE_THRESHOLD &&
+      Math.abs(deltaX) > Math.abs(deltaY);
+
+    if (isHorizontalSwipe) {
+      if (deltaX < 0) {
+        goNext();
+      } else {
+        goPrevious();
+      }
+    }
+
+    touchStartX.current = null;
+    touchStartY.current = null;
+  };
+
+  const handleTouchCancel = () => {
+    touchStartX.current = null;
+    touchStartY.current = null;
+  };
+
   const active = resolvedSlides[activeIndex];
 
-  /*
-   * Empty/fallback state.
-   */
   if (!active || total === 0) {
     return (
       <section className="w-full px-4 py-6 sm:px-6 md:px-8 md:py-8">
@@ -195,24 +231,24 @@ export const HeroCarousel: React.FC<HeroCarouselProps> = ({ fallback }) => {
     (active.mediaUrl && isLikelyVideoUrl(active.mediaUrl));
 
   return (
-<section className="relative w-full overflow-visible px-0 py-5 sm:py-7 md:py-8">
-        {/*
-       * Main carousel frame.
-       *
-       * `relative` is important here because the arrows,
-       * indicators and floating card are positioned relative
-       * to this container instead of the whole page.
-       */}
-<div className="relative mx-0 w-full  rounded-[20px] bg-[#FFFFFF] px-6 py-8">
-          <div className="grid w-full grid-cols-1 items-center gap-7 sm:gap-9 lg:grid-cols-2 lg:gap-12 xl:gap-16">
-          {/*
-           * LEFT / TEXT CONTENT
-           */}
-          <div className="order-1 flex min-w-0 flex-col justify-center px-2 text-center sm:px-4 lg:order-1 lg:px-6 lg:text-left xl:px-8">
+    <section className="relative w-full overflow-visible px-0 py-1.5 sm:py-7 md:py-8">
+      <div
+        className="relative mx-0 w-full rounded-[20px] bg-white px-2 py-3.5 sm:px-6 sm:py-8"
+        onTouchStart={handleTouchStart}
+        onTouchEnd={handleTouchEnd}
+        onTouchCancel={handleTouchCancel}
+        style={{ touchAction: "pan-y" }}
+      >
+        <div className="grid w-full grid-cols-1 items-center gap-3.5 sm:gap-9 lg:grid-cols-2 lg:gap-12 xl:gap-16">
+
+          {/* LEFT / TEXT CONTENT */}
+
+          <div className="order-1 flex min-w-0 flex-col justify-center px-3 text-center sm:px-4 lg:order-1 lg:px-6 lg:text-left xl:px-8">
             <div className="mx-auto w-full max-w-xl lg:mx-0">
+
               <h1
                 key={`title-${active.id}`}
-                className="font-serif text-3xl font-semibold leading-[1.1] tracking-tight text-[#2d2a26] sm:text-4xl md:text-5xl lg:text-[3.25rem] xl:text-[3.7rem]"
+                className="font-serif text-[28px] font-semibold leading-[1.1] tracking-tight text-[#2d2a26] sm:text-4xl md:text-5xl lg:text-[3.25rem] xl:text-[3.7rem]"
               >
                 {active.title}
               </h1>
@@ -220,14 +256,14 @@ export const HeroCarousel: React.FC<HeroCarouselProps> = ({ fallback }) => {
               {active.description && (
                 <p
                   key={`description-${active.id}`}
-                  className="mx-auto mt-4 max-w-lg text-sm leading-7 text-neutral-600 sm:mt-5 sm:text-base sm:leading-7 md:text-lg lg:mx-0"
+                  className="mx-auto mt-2.5 max-w-lg text-[13px] leading-6 text-neutral-600 sm:mt-5 sm:text-base sm:leading-7 md:text-lg lg:mx-0"
                 >
                   {active.description}
                 </p>
               )}
 
               {active.buttonLink && (
-                <div className="mt-6 flex flex-wrap justify-center gap-3 sm:mt-7 lg:justify-start">
+                <div className="mt-4 flex flex-wrap justify-center gap-3 sm:mt-7 lg:justify-start">
                   {active.buttonLink.startsWith("/") ||
                   active.buttonLink.startsWith("#") ? (
                     <Link
@@ -277,10 +313,9 @@ export const HeroCarousel: React.FC<HeroCarouselProps> = ({ fallback }) => {
                 </div>
               )}
 
-              {/*
-               * Small trust indicators.
-               */}
-              <div className="mt-7 flex flex-wrap items-center justify-center gap-x-5 gap-y-2 text-[11px] text-[#5a5248] sm:mt-9 sm:text-xs lg:justify-start">
+              {/* TRUST INDICATORS */}
+
+              <div className="mt-4 flex flex-wrap items-center justify-center gap-x-5 gap-y-2 text-[11px] text-[#5a5248] sm:mt-9 sm:text-xs lg:justify-start">
                 <div className="flex items-center gap-2">
                   <svg
                     className="h-4 w-4 text-[#8b6f5a]"
@@ -316,19 +351,13 @@ export const HeroCarousel: React.FC<HeroCarouselProps> = ({ fallback }) => {
             </div>
           </div>
 
-          {/*
-           * RIGHT / MEDIA CONTENT
-           */}
-          <div className="order-2 min-w-0 px-1 sm:px-2 lg:order-2">
+          {/* RIGHT / MEDIA CONTENT */}
+
+          <div className="order-2 min-w-0 px-0 sm:px-2 lg:order-2">
             <div className="relative mx-auto w-full max-w-[680px]">
-              {/*
-               * Media wrapper.
-               *
-               * The overflow-hidden is ONLY on the media itself.
-               * Therefore the floating card can safely sit outside
-               * the image without clipping.
-               */}
-              <div className="relative aspect-[4/3] w-full overflow-hidden rounded-2xl bg-gradient-to-br from-[#e8dfd0] to-[#f5ede0] shadow-xl sm:rounded-3xl sm:shadow-2xl md:aspect-[16/10] lg:aspect-[4/3] xl:aspect-[16/10]">
+
+              <div className="relative aspect-[16/11] w-full overflow-hidden rounded-xl bg-gradient-to-br from-[#e8dfd0] to-[#f5ede0] shadow-xl sm:rounded-3xl sm:shadow-2xl md:aspect-[16/10] lg:aspect-[4/3] xl:aspect-[16/10]">
+
                 {isVideo ? (
                   <video
                     key={active.mediaUrl}
@@ -352,18 +381,11 @@ export const HeroCarousel: React.FC<HeroCarouselProps> = ({ fallback }) => {
                   />
                 )}
 
-                {/*
-                 * Very subtle overlay for visual depth.
-                 */}
                 <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/5 via-transparent to-white/5" />
               </div>
 
-              {/*
-               * Floating social-proof card.
-               *
-               * Hidden on very small screens because there isn't
-               * enough room. Appears from sm breakpoint onward.
-               */}
+              {/* FLOATING SOCIAL PROOF */}
+
               <div className="absolute -bottom-5 left-3 z-20 hidden w-[178px] rounded-xl bg-white p-3.5 shadow-xl sm:block md:-bottom-6 md:-left-5 md:w-44 md:p-4">
                 <div className="mb-1.5 flex items-center gap-2">
                   <div className="flex -space-x-1.5">
@@ -389,12 +411,8 @@ export const HeroCarousel: React.FC<HeroCarouselProps> = ({ fallback }) => {
           </div>
         </div>
 
-        {/*
-         * DESKTOP / TABLET NAVIGATION
-         *
-         * These are now positioned relative to the actual carousel
-         * frame, not the entire webpage.
-         */}
+        {/* DESKTOP / TABLET NAVIGATION */}
+
         {total > 1 && (
           <>
             <button
@@ -446,20 +464,16 @@ export const HeroCarousel: React.FC<HeroCarouselProps> = ({ fallback }) => {
         )}
       </div>
 
-      {/*
-       * MOBILE NAVIGATION
-       *
-       * On phones the arrows move below the media instead of
-       * floating against the browser edges.
-       */}
+      {/* MOBILE NAVIGATION */}
+
       {total > 1 && (
-        <div className="mx-auto mt-5 flex w-full max-w-7xl items-center justify-center gap-4 sm:hidden">
+        <div className="mx-auto mt-2.5 flex w-full max-w-7xl items-center justify-center gap-4 px-3 sm:hidden">
           <button
             type="button"
             onClick={goPrevious}
             disabled={isAnimating}
             aria-label="Previous slide"
-            className="flex h-10 w-10 items-center justify-center rounded-full bg-white text-[#2d2a26] shadow-md ring-1 ring-stone-200 transition-all active:scale-95 disabled:pointer-events-none disabled:opacity-50"
+            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-white text-[#2d2a26] shadow-md ring-1 ring-stone-200 transition-all active:scale-95 disabled:pointer-events-none disabled:opacity-50"
           >
             <svg
               className="h-4 w-4"
@@ -500,7 +514,7 @@ export const HeroCarousel: React.FC<HeroCarouselProps> = ({ fallback }) => {
             onClick={goNext}
             disabled={isAnimating}
             aria-label="Next slide"
-            className="flex h-10 w-10 items-center justify-center rounded-full bg-white text-[#2d2a26] shadow-md ring-1 ring-stone-200 transition-all active:scale-95 disabled:pointer-events-none disabled:opacity-50"
+            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-white text-[#2d2a26] shadow-md ring-1 ring-stone-200 transition-all active:scale-95 disabled:pointer-events-none disabled:opacity-50"
           >
             <svg
               className="h-4 w-4"
@@ -520,9 +534,8 @@ export const HeroCarousel: React.FC<HeroCarouselProps> = ({ fallback }) => {
         </div>
       )}
 
-      {/*
-       * DESKTOP / TABLET DOT INDICATORS
-       */}
+      {/* DESKTOP / TABLET DOT INDICATORS */}
+
       {total > 1 && (
         <div className="mt-6 hidden items-center justify-center gap-2 sm:flex md:mt-7">
           {resolvedSlides.map((slide, index) => (

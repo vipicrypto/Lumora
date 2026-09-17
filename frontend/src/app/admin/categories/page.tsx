@@ -1,6 +1,11 @@
 "use client";
 
-import { FormEvent, useEffect, useState } from "react";
+import {
+  FormEvent,
+  useEffect,
+  useRef,
+  useState,
+} from "react";
 
 type Category = {
   id: string;
@@ -31,6 +36,7 @@ export default function AdminCategoriesPage() {
   const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [uploadingImage, setUploadingImage] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
@@ -40,6 +46,9 @@ export default function AdminCategoriesPage() {
 
   const [form, setForm] =
     useState<CategoryForm>(emptyForm);
+
+  const imageInputRef =
+    useRef<HTMLInputElement | null>(null);
 
   async function loadCategories() {
     try {
@@ -85,15 +94,24 @@ export default function AdminCategoriesPage() {
     setForm(emptyForm);
     setError("");
     setSuccess("");
+
+    if (imageInputRef.current) {
+      imageInputRef.current.value = "";
+    }
+
     setShowForm(true);
   }
 
   function closeForm() {
-    if (saving) return;
+    if (saving || uploadingImage) return;
 
     setShowForm(false);
     setEditingId(null);
     setForm(emptyForm);
+
+    if (imageInputRef.current) {
+      imageInputRef.current.value = "";
+    }
   }
 
   function updateForm(
@@ -106,91 +124,180 @@ export default function AdminCategoriesPage() {
     }));
   }
 
-async function handleSubmit(
-  event: FormEvent<HTMLFormElement>
-) {
-  event.preventDefault();
+  async function handleImageUpload(
+    event: React.ChangeEvent<HTMLInputElement>
+  ) {
+    const file = event.target.files?.[0];
 
-  setSaving(true);
-  setError("");
-  setSuccess("");
+    if (!file) return;
 
-  try {
-    const isEditing = Boolean(editingId);
+    setError("");
+    setSuccess("");
+    setUploadingImage(true);
 
-    const url = isEditing
-      ? `/api/admin/categories/${editingId}`
-      : "/api/admin/categories";
+    try {
+      const allowedTypes = [
+        "image/jpeg",
+        "image/png",
+        "image/webp",
+        "image/gif",
+      ];
 
-    const method = isEditing
-      ? "PATCH"
-      : "POST";
+      if (!allowedTypes.includes(file.type)) {
+        throw new Error(
+          "Only JPG, PNG, WEBP, and GIF images are allowed."
+        );
+      }
 
-    const response = await fetch(url, {
-      method,
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        name: form.name,
-        description: form.description,
-        image: form.image,
-        isActive: form.isActive,
-      }),
-    });
+      if (file.size > 5 * 1024 * 1024) {
+        throw new Error(
+          "Image size must be 5 MB or less."
+        );
+      }
 
-    const data = await response.json();
+      const formData = new FormData();
+      formData.append("file", file);
 
-    if (!response.ok) {
-      throw new Error(
-        data.error ||
-          (isEditing
-            ? "Unable to update category."
-            : "Unable to create category.")
+      const response = await fetch(
+        "/api/admin/categories/upload",
+        {
+          method: "POST",
+          body: formData,
+        }
       );
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(
+          data.error || "Unable to upload category image."
+        );
+      }
+
+      if (!data.url) {
+        throw new Error(
+          "Image upload completed but no image URL was returned."
+        );
+      }
+
+      updateForm("image", data.url);
+      setSuccess("Category image uploaded successfully.");
+    } catch (err) {
+      console.error(
+        "Category image upload error:",
+        err
+      );
+
+      setError(
+        err instanceof Error
+          ? err.message
+          : "Unable to upload category image."
+      );
+    } finally {
+      setUploadingImage(false);
     }
-
-    if (isEditing) {
-      setCategories((current) =>
-        current.map((category) =>
-          category.id === editingId
-            ? data.category
-            : category
-        )
-      );
-
-      setSuccess(
-        "Category updated successfully."
-      );
-    } else {
-      setCategories((current) => [
-        data.category,
-        ...current,
-      ]);
-
-      setSuccess(
-        "Category created successfully."
-      );
-    }
-
-    setForm(emptyForm);
-    setEditingId(null);
-    setShowForm(false);
-  } catch (err) {
-    console.error(
-      "Save category error:",
-      err
-    );
-
-    setError(
-      err instanceof Error
-        ? err.message
-        : "Unable to save category."
-    );
-  } finally {
-    setSaving(false);
   }
-}
+
+  function removeSelectedImage() {
+    updateForm("image", "");
+
+    if (imageInputRef.current) {
+      imageInputRef.current.value = "";
+    }
+  }
+
+  async function handleSubmit(
+    event: FormEvent<HTMLFormElement>
+  ) {
+    event.preventDefault();
+
+    if (uploadingImage) return;
+
+    setSaving(true);
+    setError("");
+    setSuccess("");
+
+    try {
+      const isEditing = Boolean(editingId);
+
+      const url = isEditing
+        ? `/api/admin/categories/${editingId}`
+        : "/api/admin/categories";
+
+      const method = isEditing
+        ? "PATCH"
+        : "POST";
+
+      const response = await fetch(url, {
+        method,
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          name: form.name,
+          description: form.description,
+          image: form.image,
+          isActive: form.isActive,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(
+          data.error ||
+            (isEditing
+              ? "Unable to update category."
+              : "Unable to create category.")
+        );
+      }
+
+      if (isEditing) {
+        setCategories((current) =>
+          current.map((category) =>
+            category.id === editingId
+              ? data.category
+              : category
+          )
+        );
+
+        setSuccess(
+          "Category updated successfully."
+        );
+      } else {
+        setCategories((current) => [
+          data.category,
+          ...current,
+        ]);
+
+        setSuccess(
+          "Category created successfully."
+        );
+      }
+
+      setForm(emptyForm);
+      setEditingId(null);
+
+      if (imageInputRef.current) {
+        imageInputRef.current.value = "";
+      }
+
+      setShowForm(false);
+    } catch (err) {
+      console.error(
+        "Save category error:",
+        err
+      );
+
+      setError(
+        err instanceof Error
+          ? err.message
+          : "Unable to save category."
+      );
+    } finally {
+      setSaving(false);
+    }
+  }
 
   async function handleToggle(category: Category) {
     setError("");
@@ -284,7 +391,9 @@ async function handleSubmit(
         )
       );
 
-      setSuccess("Category deleted successfully.");
+      setSuccess(
+        "Category deleted successfully."
+      );
     } catch (err) {
       console.error(
         "Delete category error:",
@@ -309,6 +418,10 @@ async function handleSubmit(
       isActive: category.isActive,
     });
 
+    if (imageInputRef.current) {
+      imageInputRef.current.value = "";
+    }
+
     setError("");
     setSuccess("");
     setShowForm(true);
@@ -321,7 +434,8 @@ async function handleSubmit(
   const inactiveCount =
     categories.length - activeCount;
 
-  const normalizedSearch = searchQuery.trim().toLowerCase();
+  const normalizedSearch =
+    searchQuery.trim().toLowerCase();
 
   const filteredCategories = normalizedSearch
     ? categories.filter((category) =>
@@ -330,7 +444,9 @@ async function handleSubmit(
           category.slug,
           category.description || "",
         ].some((value) =>
-          value.toLowerCase().includes(normalizedSearch)
+          value
+            .toLowerCase()
+            .includes(normalizedSearch)
         )
       )
     : categories;
@@ -434,7 +550,9 @@ async function handleSubmit(
               <button
                 type="button"
                 onClick={closeForm}
-                disabled={saving}
+                disabled={
+                  saving || uploadingImage
+                }
                 className="rounded-lg px-3 py-2 text-sm text-neutral-500 transition hover:bg-neutral-100 hover:text-black disabled:opacity-50"
               >
                 Cancel
@@ -470,27 +588,119 @@ async function handleSubmit(
                   />
                 </div>
 
+                {/* Category Image */}
                 <div>
                   <label
                     htmlFor="category-image"
                     className="mb-2 block text-xs font-semibold uppercase tracking-[0.12em] text-neutral-500"
                   >
-                    Image URL
+                    Category Image
                   </label>
 
-                  <input
-                    id="category-image"
-                    type="url"
-                    value={form.image}
-                    onChange={(event) =>
-                      updateForm(
-                        "image",
-                        event.target.value
-                      )
-                    }
-                    placeholder="https://..."
-                    className="w-full rounded-xl border border-neutral-200 bg-white px-4 py-3 text-sm text-black outline-none transition placeholder:text-neutral-400 focus:border-black"
-                  />
+                  <div className="rounded-xl border border-neutral-200 bg-neutral-50 p-4">
+                    <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
+                      {/* Preview */}
+                      <div className="flex h-24 w-24 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-neutral-200 bg-white">
+                        {form.image ? (
+                          <img
+                            src={form.image}
+                            alt={
+                              form.name ||
+                              "Category preview"
+                            }
+                            className="h-full w-full object-cover"
+                          />
+                        ) : (
+                          <span className="text-2xl text-neutral-300">
+                            ◇
+                          </span>
+                        )}
+                      </div>
+
+                      <div className="min-w-0 flex-1">
+                        <p className="text-sm font-medium text-neutral-800">
+                          Upload category image
+                        </p>
+
+                        <p className="mt-1 text-xs leading-5 text-neutral-400">
+                          JPG, PNG, WEBP or GIF.
+                          Maximum 5 MB.
+                        </p>
+
+                        <div className="mt-3 flex flex-wrap gap-2">
+                          <label
+                            htmlFor="category-image-upload"
+                            className={`inline-flex cursor-pointer items-center justify-center rounded-lg bg-black px-4 py-2.5 text-xs font-medium text-white transition hover:bg-neutral-800 ${
+                              uploadingImage
+                                ? "pointer-events-none opacity-50"
+                                : ""
+                            }`}
+                          >
+                            {uploadingImage
+                              ? "Uploading..."
+                              : form.image
+                                ? "Change Image"
+                                : "Choose Image"}
+                          </label>
+
+                          <input
+                            ref={imageInputRef}
+                            id="category-image-upload"
+                            type="file"
+                            accept="image/jpeg,image/png,image/webp,image/gif"
+                            onChange={
+                              handleImageUpload
+                            }
+                            disabled={
+                              uploadingImage ||
+                              saving
+                            }
+                            className="hidden"
+                          />
+
+                          {form.image && (
+                            <button
+                              type="button"
+                              onClick={
+                                removeSelectedImage
+                              }
+                              disabled={
+                                uploadingImage ||
+                                saving
+                              }
+                              className="rounded-lg border border-neutral-200 bg-white px-4 py-2.5 text-xs font-medium text-neutral-600 transition hover:bg-neutral-100 hover:text-black disabled:opacity-50"
+                            >
+                              Remove
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Optional URL */}
+                    <div className="mt-4 border-t border-neutral-200 pt-4">
+                      <label
+                        htmlFor="category-image"
+                        className="mb-2 block text-[10px] font-semibold uppercase tracking-[0.12em] text-neutral-400"
+                      >
+                        Or use Image URL
+                      </label>
+
+                      <input
+                        id="category-image"
+                        type="text"
+                        value={form.image}
+                        onChange={(event) =>
+                          updateForm(
+                            "image",
+                            event.target.value
+                          )
+                        }
+                        placeholder="/uploads/categories/image.jpg or https://..."
+                        className="w-full rounded-xl border border-neutral-200 bg-white px-4 py-3 text-sm text-black outline-none transition placeholder:text-neutral-400 focus:border-black"
+                      />
+                    </div>
+                  </div>
                 </div>
               </div>
 
@@ -539,7 +749,9 @@ async function handleSubmit(
                 <button
                   type="button"
                   onClick={closeForm}
-                  disabled={saving}
+                  disabled={
+                    saving || uploadingImage
+                  }
                   className="rounded-xl border border-neutral-200 px-5 py-3 text-sm font-medium text-neutral-600 transition hover:bg-neutral-100 disabled:opacity-50"
                 >
                   Cancel
@@ -547,14 +759,19 @@ async function handleSubmit(
 
                 <button
                   type="submit"
-                  disabled={saving}
+                  disabled={
+                    saving ||
+                    uploadingImage
+                  }
                   className="rounded-xl bg-black px-5 py-3 text-sm font-medium text-white transition hover:bg-neutral-800 disabled:cursor-not-allowed disabled:opacity-50"
                 >
                   {saving
                     ? "Saving..."
-                    : editingId
-                      ? "Save Changes"
-                      : "Create Category"}
+                    : uploadingImage
+                      ? "Uploading..."
+                      : editingId
+                        ? "Save Changes"
+                        : "Create Category"}
                 </button>
               </div>
             </form>
@@ -593,7 +810,9 @@ async function handleSubmit(
                     type="search"
                     value={searchQuery}
                     onChange={(event) =>
-                      setSearchQuery(event.target.value)
+                      setSearchQuery(
+                        event.target.value
+                      )
                     }
                     placeholder="Search categories..."
                     className="w-full rounded-xl border border-neutral-200 bg-white py-2.5 pl-9 pr-9 text-sm text-black outline-none transition placeholder:text-neutral-400 focus:border-black"
@@ -602,7 +821,9 @@ async function handleSubmit(
                   {searchQuery && (
                     <button
                       type="button"
-                      onClick={() => setSearchQuery("")}
+                      onClick={() =>
+                        setSearchQuery("")
+                      }
                       aria-label="Clear category search"
                       className="absolute right-2 top-1/2 -translate-y-1/2 rounded-md px-2 py-1 text-xs text-neutral-400 transition hover:bg-neutral-100 hover:text-black"
                     >
@@ -656,12 +877,17 @@ async function handleSubmit(
               </h3>
 
               <p className="mx-auto mt-2 max-w-md text-sm leading-6 text-neutral-500">
-                No category matches “{searchQuery}”. Try a different name, slug, or description.
+                No category matches “
+                {searchQuery}
+                ”. Try a different name, slug, or
+                description.
               </p>
 
               <button
                 type="button"
-                onClick={() => setSearchQuery("")}
+                onClick={() =>
+                  setSearchQuery("")
+                }
                 className="mt-5 rounded-xl border border-neutral-200 px-4 py-2.5 text-sm font-medium text-neutral-600 transition hover:bg-neutral-100 hover:text-black"
               >
                 Clear Search
@@ -669,92 +895,94 @@ async function handleSubmit(
             </div>
           ) : (
             <div className="divide-y divide-neutral-100">
-              {filteredCategories.map((category) => (
-                <div
-                  key={category.id}
-                  className="flex flex-col gap-5 px-6 py-5 transition hover:bg-neutral-50 md:flex-row md:items-center md:justify-between"
-                >
-                  <div className="flex min-w-0 items-center gap-4">
-                    <div className="flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-neutral-100">
-                      {category.image ? (
-                        <img
-                          src={category.image}
-                          alt={category.name}
-                          className="h-full w-full object-cover"
-                        />
-                      ) : (
-                        <span className="text-lg text-neutral-400">
-                          ◇
-                        </span>
-                      )}
-                    </div>
-
-                    <div className="min-w-0">
-                      <div className="flex flex-wrap items-center gap-2">
-                        <h3 className="truncate text-sm font-semibold text-black">
-                          {category.name}
-                        </h3>
-
-                        <span
-                          className={`rounded-full px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.08em] ${
-                            category.isActive
-                              ? "bg-green-50 text-green-700"
-                              : "bg-neutral-100 text-neutral-500"
-                          }`}
-                        >
-                          {category.isActive
-                            ? "Active"
-                            : "Inactive"}
-                        </span>
+              {filteredCategories.map(
+                (category) => (
+                  <div
+                    key={category.id}
+                    className="flex flex-col gap-5 px-6 py-5 transition hover:bg-neutral-50 md:flex-row md:items-center md:justify-between"
+                  >
+                    <div className="flex min-w-0 items-center gap-4">
+                      <div className="flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-neutral-100">
+                        {category.image ? (
+                          <img
+                            src={category.image}
+                            alt={category.name}
+                            className="h-full w-full object-cover"
+                          />
+                        ) : (
+                          <span className="text-lg text-neutral-400">
+                            ◇
+                          </span>
+                        )}
                       </div>
 
-                      <p className="mt-1 text-xs text-neutral-400">
-                        /{category.slug}
-                      </p>
+                      <div className="min-w-0">
+                        <div className="flex flex-wrap items-center gap-2">
+                          <h3 className="truncate text-sm font-semibold text-black">
+                            {category.name}
+                          </h3>
 
-                      {category.description && (
-                        <p className="mt-2 line-clamp-1 max-w-xl text-sm text-neutral-500">
-                          {category.description}
+                          <span
+                            className={`rounded-full px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.08em] ${
+                              category.isActive
+                                ? "bg-green-50 text-green-700"
+                                : "bg-neutral-100 text-neutral-500"
+                            }`}
+                          >
+                            {category.isActive
+                              ? "Active"
+                              : "Inactive"}
+                          </span>
+                        </div>
+
+                        <p className="mt-1 text-xs text-neutral-400">
+                          /{category.slug}
                         </p>
-                      )}
+
+                        {category.description && (
+                          <p className="mt-2 line-clamp-1 max-w-xl text-sm text-neutral-500">
+                            {category.description}
+                          </p>
+                        )}
+                      </div>
+                    </div>
+
+                    <div className="flex shrink-0 items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={() =>
+                          startEdit(category)
+                        }
+                        className="rounded-lg border border-neutral-200 px-3 py-2 text-xs font-medium text-neutral-600 transition hover:bg-neutral-100 hover:text-black"
+                      >
+                        Edit
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() =>
+                          handleToggle(category)
+                        }
+                        className="rounded-lg border border-neutral-200 px-3 py-2 text-xs font-medium text-neutral-600 transition hover:bg-neutral-100 hover:text-black"
+                      >
+                        {category.isActive
+                          ? "Disable"
+                          : "Enable"}
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() =>
+                          handleDelete(category)
+                        }
+                        className="rounded-lg border border-red-100 px-3 py-2 text-xs font-medium text-red-600 transition hover:bg-red-50"
+                      >
+                        Delete
+                      </button>
                     </div>
                   </div>
-
-                  <div className="flex shrink-0 items-center gap-2">
-                    <button
-                      type="button"
-                      onClick={() =>
-                        startEdit(category)
-                      }
-                      className="rounded-lg border border-neutral-200 px-3 py-2 text-xs font-medium text-neutral-600 transition hover:bg-neutral-100 hover:text-black"
-                    >
-                      Edit
-                    </button>
-
-                    <button
-                      type="button"
-                      onClick={() =>
-                        handleToggle(category)
-                      }
-                      className="rounded-lg border border-neutral-200 px-3 py-2 text-xs font-medium text-neutral-600 transition hover:bg-neutral-100 hover:text-black"
-                    >
-                      {category.isActive
-                        ? "Disable"
-                        : "Enable"}
-                    </button>
-
-                    <button
-                      type="button"
-                      onClick={() =>
-                        handleDelete(category)
-                      }
-                      className="rounded-lg border border-red-100 px-3 py-2 text-xs font-medium text-red-600 transition hover:bg-red-50"
-                    >
-                      Delete
-                    </button>
-                  </div>
-                </div>
-              ))}
+                )
+              )}
             </div>
           )}
         </div>
