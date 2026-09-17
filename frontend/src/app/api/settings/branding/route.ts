@@ -6,12 +6,11 @@ const BRANDING_KEY = "site_logo";
 
 export async function GET() {
   try {
-    const settings =
-      await db.orm.public.SiteSetting
-        .where({
-          key: BRANDING_KEY,
-        })
-        .all();
+    const settings = await db.orm.public.SiteSetting
+      .where({
+        key: BRANDING_KEY,
+      })
+      .all();
 
     const setting = settings[0] ?? null;
 
@@ -22,16 +21,12 @@ export async function GET() {
       },
       {
         headers: {
-          "Cache-Control":
-            "no-store, max-age=0",
+          "Cache-Control": "no-store, max-age=0",
         },
       }
     );
   } catch (error) {
-    console.error(
-      "Get public branding error:",
-      error
-    );
+    console.error("Get public branding error:", error);
 
     return NextResponse.json(
       {
